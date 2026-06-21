@@ -14,7 +14,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
 
 <script src="https://js.paystack.co/v1/inline.js"></script>
 
@@ -173,8 +172,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     </div>
     <div class="auth-card">
       <div class="role-toggle" id="auth-role-toggle">
-        <button data-role="passenger" class="active">Ride</button>
-        <button data-role="rider">Ride a bike (Rider)</button>
+        <button data-role="passenger" class="active">Passenger</button>
+        <button data-role="rider">Rider</button>
       </div>
 
       <div id="auth-mode-login">
@@ -715,7 +714,6 @@ const DEFAULT_FARE_RULES = { baseFare: 200, perKm: 60, perMin: 10, minFare: 300,
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 const FieldValue = firebase.firestore.FieldValue;
 
 // ---------- GLOBAL STATE ----------
@@ -1063,9 +1061,9 @@ async function submitRiderOnboarding(){
   try{
     const uid = currentUser.uid;
     const uploads = {};
-    if(photoFile) uploads.photoURL = await uploadFile(`riders/${uid}/profile_${Date.now()}_${photoFile.name}`, photoFile);
-    uploads.licenseDocURL = await uploadFile(`riders/${uid}/license_${Date.now()}_${licDocFile.name}`, licDocFile);
-    uploads.bikeDocURL = await uploadFile(`riders/${uid}/bike_${Date.now()}_${bikeDocFile.name}`, bikeDocFile);
+    if(photoFile) uploads.photoURL = await fileToCompressedDataURL(photoFile, 400, 0.7);
+    uploads.licenseDocURL = await fileToCompressedDataURL(licDocFile, 1100, 0.6);
+    uploads.bikeDocURL = await fileToCompressedDataURL(bikeDocFile, 1100, 0.6);
 
     await db.collection('riders').doc(uid).set({
       bikeModel, plate, licenseNo,
@@ -1092,9 +1090,35 @@ async function submitRiderOnboarding(){
   }
 }
 
-function uploadFile(path, file){
-  const ref = storage.ref().child(path);
-  return ref.put(file).then(snap => snap.ref.getDownloadURL());
+// Compress + resize an image file in-browser and return a base64 data URL,
+// small enough to store directly inside a Firestore document (1MB doc limit).
+function fileToCompressedDataURL(file, maxDim, startQuality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file.'));
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not read image.'));
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        let q = startQuality || 0.7;
+        let dataUrl = canvas.toDataURL('image/jpeg', q);
+        // Step quality down until the encoded string comfortably fits in a Firestore field.
+        while(dataUrl.length > 320000 && q > 0.25){
+          q -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', q);
+        }
+        resolve(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // ============================== PASSENGER APP ==============================
