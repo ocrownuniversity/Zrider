@@ -886,6 +886,13 @@ function isInServiceArea(lat,lng){
   if(lat==null || lng==null) return false;
   return haversineKm(lat,lng,serviceArea.lat,serviceArea.lng) <= serviceArea.radiusKm;
 }
+// Use this wherever a point might be coordinate-less (typed address, no Maps key
+// configured) — falls back to checking the address text for the service area's name.
+function isLikelyInServiceArea(point){
+  if(!point) return false;
+  if(point.lat != null && point.lng != null) return isInServiceArea(point.lat, point.lng);
+  return (point.address || '').toLowerCase().includes(serviceArea.name.split(' ')[0].toLowerCase());
+}
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
 }
@@ -1375,6 +1382,14 @@ function pSheetForm(sheet){
     });
   }
 
+  $('p-pickup').addEventListener('change', ()=>{
+    if(!pPickup || pPickup.address !== $('p-pickup').value){
+      // No autocomplete match (e.g. no Maps key) — fall back to text-only pickup
+      pPickup = { lat:null, lng:null, address: $('p-pickup').value.trim() };
+      pUpdateFare();
+    }
+  });
+
   $('p-destination').addEventListener('change', ()=>{
     if(!pDestination || pDestination.address !== $('p-destination').value){
       // No autocomplete match (e.g. no Maps key) — fall back to text-only destination
@@ -1431,23 +1446,17 @@ async function loadRecentDestinations(){
 function pUpdateFare(){
   const warnEl = $('p-geofence-warning');
   warnEl.textContent = '';
-  if(!pPickup || !pDestination || !pDestination.address){ $('p-fare-card').classList.add('hidden'); return; }
+  if(!pPickup || !pPickup.address || !pDestination || !pDestination.address){ $('p-fare-card').classList.add('hidden'); return; }
 
-  const pickupOk = isInServiceArea(pPickup.lat, pPickup.lng);
-  let destOk;
-  if(pDestination.lat != null){
-    destOk = isInServiceArea(pDestination.lat, pDestination.lng);
-  } else {
-    // No geocoded coordinates available (Maps API key not set) — fall back to a name check.
-    destOk = pDestination.address.toLowerCase().includes('ikeja');
-  }
+  let pickupOk = isLikelyInServiceArea(pPickup);
+  let destOk = isLikelyInServiceArea(pDestination);
 
   if(!pickupOk){ warnEl.textContent = `Your pickup point looks outside ${serviceArea.name}. Zrider only operates within this area.`; $('p-fare-card').classList.add('hidden'); return; }
   if(!destOk){ warnEl.textContent = `Destination must be within ${serviceArea.name}. Zrider doesn't operate outside this zone yet.`; $('p-fare-card').classList.add('hidden'); return; }
 
-  const distKm = pDestination.lat != null
+  const distKm = (pPickup.lat != null && pDestination.lat != null)
     ? haversineKm(pPickup.lat, pPickup.lng, pDestination.lat, pDestination.lng)
-    : 3.5; // reasonable default estimate when exact destination coords are unavailable
+    : 3.5; // reasonable default estimate when exact coordinates aren't available for one or both points
   const breakdown = computeFareBreakdown(distKm);
   $('p-fare-distance').textContent = fmtKm(distKm);
   $('p-fare-time').textContent = '~' + breakdown.estMinutes + ' min';
@@ -1934,7 +1943,7 @@ function rListenIncomingRequests(){
       if(!riderDoc.online || activeRideId) return; // ignore while offline or mid-trip
       const candidates = snap.docs
         .map(d=>Object.assign({id:d.id}, d.data()))
-        .filter(r=> !rDeclinedIds.has(r.id) && isInServiceArea(r.pickup.lat, r.pickup.lng));
+        .filter(r=> !rDeclinedIds.has(r.id) && isLikelyInServiceArea(r.pickup));
       candidates.sort((a,b)=> (a.createdAt?.toMillis?.()||0) - (b.createdAt?.toMillis?.()||0));
       if(candidates.length === 0){ if(rCurrentTab==='home' && !activeRideId) rRenderSheetIdle(); return; }
       if(rCurrentTab==='home' && !activeRideId) rRenderSheetIncoming(candidates[0]);
