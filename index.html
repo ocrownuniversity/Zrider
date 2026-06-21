@@ -6,6 +6,8 @@
 <title>Zrider — Bike Rides in Ikeja</title>
 <meta name="description" content="Zrider: fast, affordable motorcycle rides across Ikeja LGA, Lagos.">
 <meta name="theme-color" content="#0B6E4F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B6E4F'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B6E4F'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -178,7 +180,14 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 
       <div id="auth-mode-login">
         <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@email.com" autocomplete="email"></div>
-        <div class="field"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></div>
+        <div class="field">
+          <label>Password</label>
+          <div style="position:relative;">
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" style="padding-right:46px;">
+            <button type="button" id="login-pw-toggle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:17px;cursor:pointer;color:var(--ink-400);">👁</button>
+          </div>
+        </div>
+        <p class="tab-link" style="margin-top:-8px;text-align:right;"><b id="go-forgot">Forgot password?</b></p>
         <button class="btn btn-primary" id="btn-login">Log in</button>
         <p class="tab-link">New to Zrider? <b id="go-register">Create an account</b></p>
       </div>
@@ -187,7 +196,13 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
         <div class="field"><label>Full name <span style="color:var(--red-600);">*</span></label><input type="text" id="reg-name" placeholder="Ridwan Opeyemi"></div>
         <div class="field"><label>Email <span style="color:var(--red-600);">*</span></label><input type="email" id="reg-email" placeholder="you@email.com"></div>
         <div class="field"><label>Phone number <span style="color:var(--red-600);">*</span></label><input type="tel" id="reg-phone" placeholder="080 000 0000"></div>
-        <div class="field"><label>Password <span style="color:var(--red-600);">*</span></label><input type="password" id="reg-password" placeholder="Min. 6 characters"></div>
+        <div class="field">
+          <label>Password <span style="color:var(--red-600);">*</span></label>
+          <div style="position:relative;">
+            <input type="password" id="reg-password" placeholder="Min. 6 characters" style="padding-right:46px;">
+            <button type="button" id="reg-pw-toggle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:17px;cursor:pointer;color:var(--ink-400);">👁</button>
+          </div>
+        </div>
         <button class="btn btn-primary" id="btn-register">Create account</button>
         <p class="tab-link">Already have an account? <b id="go-login">Log in</b></p>
       </div>
@@ -285,7 +300,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <span class="spinner dark"></span>
     <h3 style="margin-top:14px;">Finding a rider near you…</h3>
     <p class="muted" style="margin-top:6px;">Matching with online riders in Ikeja</p>
-    <button class="btn btn-ghost" id="p-cancel-search" style="margin-top:18px;color:var(--red-600);">Cancel request</button>
+    <p class="meter" id="p-search-elapsed" style="margin-top:10px;font-size:13px;color:var(--ink-400);">00:00</p>
+    <button class="btn btn-ghost" id="p-cancel-search" style="margin-top:10px;color:var(--red-600);">Cancel request</button>
   </div>
 </template>
 
@@ -367,6 +383,9 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       <h3 id="p-profile-name">—</h3>
       <p class="muted" id="p-profile-email">—</p>
       <div class="pill pill-green" style="margin-top:8px;" id="p-profile-rating">★ —</div>
+      <div style="margin-top:10px;">
+        <label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-flex;">Change photo<input type="file" id="p-profile-photo-input" accept="image/*" class="hidden"></label>
+      </div>
     </div>
     <div class="card">
       <div class="field"><label>Full name</label><input type="text" id="p-edit-name"></div>
@@ -621,6 +640,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 
 <template id="tpl-a-riders">
   <h2>Riders</h2>
+  <input type="text" id="a-rider-search" placeholder="Search by name or email…" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--surface-2);font-size:14px;margin-top:10px;">
   <div class="tabs-row" id="a-rider-filter" style="margin-top:12px;">
     <button data-f="pending" class="active">Pending</button>
     <button data-f="approved">Approved</button>
@@ -632,6 +652,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 
 <template id="tpl-a-passengers">
   <h2>Passengers</h2>
+  <input type="text" id="a-passenger-search" placeholder="Search by name or email…" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--surface-2);font-size:14px;margin-top:10px;">
   <div id="a-passengers-list" style="margin-top:14px;"></div>
 </template>
 
@@ -1104,6 +1125,43 @@ function renderAuth(){
   $('go-register').addEventListener('click', ()=>{ $('auth-mode-login').classList.add('hidden'); $('auth-mode-register').classList.remove('hidden'); $('auth-error').textContent=''; });
   $('go-login').addEventListener('click', ()=>{ $('auth-mode-register').classList.add('hidden'); $('auth-mode-login').classList.remove('hidden'); $('auth-error').textContent=''; });
 
+  function wirePasswordToggle(inputId, btnId){
+    const input = $(inputId), btn = $(btnId);
+    btn.addEventListener('click', ()=>{
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.textContent = showing ? '👁' : '🙈';
+    });
+  }
+  wirePasswordToggle('login-password','login-pw-toggle');
+  wirePasswordToggle('reg-password','reg-pw-toggle');
+
+  $('go-forgot').addEventListener('click', ()=>{
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML = `<div class="modal"><div class="modal-head"><h3>Reset your password</h3></div>
+      <p class="muted" style="margin-bottom:12px;">We'll email you a link to set a new password.</p>
+      <div class="field"><label>Email</label><input type="email" id="forgot-email" placeholder="you@email.com"></div>
+      <button class="btn btn-primary" id="forgot-submit">Send reset link</button>
+      <p class="muted" id="forgot-msg" style="margin-top:10px;text-align:center;"></p></div>`;
+    document.body.appendChild(overlay);
+    $('forgot-email').value = $('login-email').value.trim();
+    overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.remove(); });
+    overlay.querySelector('#forgot-submit').addEventListener('click', async ()=>{
+      const email = overlay.querySelector('#forgot-email').value.trim();
+      const msg = overlay.querySelector('#forgot-msg');
+      if(!email){ msg.style.color = 'var(--red-600)'; msg.textContent = 'Enter your email first.'; return; }
+      try{
+        await auth.sendPasswordResetEmail(email);
+        msg.style.color = 'var(--green-700)';
+        msg.textContent = 'Reset link sent — check your inbox.';
+      }catch(e){
+        msg.style.color = 'var(--red-600)';
+        msg.textContent = friendlyAuthError(e);
+      }
+    });
+  });
+
   $('btn-login').addEventListener('click', async ()=>{
     const email = $('login-email').value.trim();
     const pw = $('login-password').value;
@@ -1307,8 +1365,8 @@ function pRenderHomeTab(){
   $('p-greeting-line').textContent = getGreeting();
   $('p-greeting-name').textContent = (currentUserDoc.name || '').split(' ')[0] || 'there';
   $('p-sos').addEventListener('click', triggerSOS);
-  getCurrentPosition().then(pos => renderMapInto('map-passenger','map-passenger-fallback', pos))
-                       .catch(()=> renderMapInto('map-passenger','map-passenger-fallback', null));
+  renderMapInto('map-passenger','map-passenger-fallback', null);
+  getCurrentPosition().then(pos => renderMapInto('map-passenger','map-passenger-fallback', pos)).catch(()=>{});
   pRenderSheet('form');
 }
 
@@ -1350,9 +1408,11 @@ function pListenActiveRide(){
   activeListeners.push(unsub);
 }
 
+let pSearchTimerInterval = null;
 function pRenderSheet(state, ride){
   const sheet = $('p-sheet');
   if(!sheet) return;
+  if(pSearchTimerInterval){ clearInterval(pSearchTimerInterval); pSearchTimerInterval = null; }
   sheet.innerHTML = '';
   if(state === 'form') return pSheetForm(sheet);
   if(state === 'searching') return pSheetSearching(sheet, ride);
@@ -1524,6 +1584,16 @@ async function pRequestRide(){
 
 function pSheetSearching(sheet, ride){
   sheet.appendChild(clone('tpl-p-searching'));
+  const startMs = ride.createdAt?.toMillis?.() || Date.now();
+  const elapsedEl = $('p-search-elapsed');
+  function tick(){
+    const secs = Math.max(0, Math.floor((Date.now() - startMs)/1000));
+    const m = Math.floor(secs/60).toString().padStart(2,'0');
+    const s = (secs%60).toString().padStart(2,'0');
+    if(elapsedEl) elapsedEl.textContent = `${m}:${s}`;
+  }
+  tick();
+  pSearchTimerInterval = setInterval(tick, 1000);
   $('p-cancel-search').addEventListener('click', ()=>{
     promptCancelReason(CANCEL_REASONS_PASSENGER, async (reason)=>{
       await db.collection('rides').doc(ride.id).update({ status:'cancelled', passengerActive:true, cancelledBy:'passenger', cancelReason:reason });
@@ -1666,6 +1736,18 @@ function pRenderProfileTab(){
   $('p-profile-rating').textContent = '★ ' + (currentUserDoc.rating||5).toFixed(1);
   $('p-profile-avatar').textContent = initials(currentUserDoc.name);
   if(currentUserDoc.photoURL) $('p-profile-avatar').innerHTML = `<img src="${currentUserDoc.photoURL}">`;
+  $('p-profile-photo-input').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    toast('Uploading photo…');
+    try{
+      const dataUrl = await fileToCompressedDataURL(file, 400, 0.7);
+      await db.collection('users').doc(currentUser.uid).update({ photoURL: dataUrl });
+      currentUserDoc.photoURL = dataUrl;
+      $('p-profile-avatar').innerHTML = `<img src="${dataUrl}">`;
+      toast('Photo updated.', 'ok');
+    }catch(err){ toast('Could not process that photo.', 'err'); }
+  });
   $('p-edit-name').value = currentUserDoc.name||'';
   $('p-edit-phone').value = currentUserDoc.phone||'';
   $('p-save-profile').addEventListener('click', async ()=>{
@@ -1905,8 +1987,8 @@ function rRenderHomeTab(){
   c.appendChild(clone('tpl-r-home'));
   $('r-greeting-line').textContent = getGreeting();
   $('r-greeting-name').textContent = (currentUserDoc.name || '').split(' ')[0] || 'there';
-  getCurrentPosition().then(pos => renderMapInto('map-rider','map-rider-fallback', pos))
-                       .catch(()=> renderMapInto('map-rider','map-rider-fallback', null));
+  renderMapInto('map-rider','map-rider-fallback', null);
+  getCurrentPosition().then(pos => renderMapInto('map-rider','map-rider-fallback', pos)).catch(()=>{});
   rRenderSheetIdle();
 }
 
@@ -2211,6 +2293,8 @@ function rRenderProfileTab(){
 let aCurrentTab = 'overview';
 let aRiderFilter = 'pending';
 let aTripFilter = 'all';
+let aRiderSearchQuery = '';
+let aPassengerSearchQuery = '';
 
 function renderAdminApp(){
   mount('tpl-app-admin');
@@ -2314,7 +2398,9 @@ function aRenderRiders(){
     btn.classList.add('active'); aRiderFilter = btn.dataset.f;
     aLoadRidersList();
   });
+  $('a-rider-search').addEventListener('input', (e)=>{ aRiderSearchQuery = e.target.value.trim().toLowerCase(); aLoadRidersList(); });
   aRiderFilter = 'pending';
+  aRiderSearchQuery = '';
   aLoadRidersList();
 }
 async function aLoadRidersList(){
@@ -2325,7 +2411,19 @@ async function aLoadRidersList(){
     let riders = ridersSnap.docs.map(d=>Object.assign({uid:d.id}, d.data()));
     if(aRiderFilter !== 'all') riders = riders.filter(r=>r.status===aRiderFilter);
     if(riders.length===0){ list.innerHTML = `<div class="empty-state"><p>No riders in this category</p></div>`; return; }
-    const userDocs = await Promise.all(riders.map(r=>db.collection('users').doc(r.uid).get()));
+    let userDocs = await Promise.all(riders.map(r=>db.collection('users').doc(r.uid).get()));
+    if(aRiderSearchQuery){
+      const filtered = [];
+      riders.forEach((r,i)=>{
+        const u = userDocs[i].exists ? userDocs[i].data() : { name:'', email:'' };
+        if((u.name||'').toLowerCase().includes(aRiderSearchQuery) || (u.email||'').toLowerCase().includes(aRiderSearchQuery)){
+          filtered.push({ rider:r, userSnap:userDocs[i] });
+        }
+      });
+      riders = filtered.map(f=>f.rider);
+      userDocs = filtered.map(f=>f.userSnap);
+    }
+    if(riders.length===0){ list.innerHTML = `<div class="empty-state"><p>No riders match your search</p></div>`; return; }
     list.innerHTML = '';
     riders.forEach((r, i)=>{
       const u = userDocs[i].exists ? userDocs[i].data() : { name:'Unknown' };
@@ -2373,12 +2471,20 @@ async function notifyUser(uid, title, message){
 async function aRenderPassengers(){
   const c = $('a-screen-passengers'); c.innerHTML = '';
   c.appendChild(clone('tpl-a-passengers'));
+  $('a-passenger-search').value = aPassengerSearchQuery;
+  $('a-passenger-search').addEventListener('input', (e)=>{ aPassengerSearchQuery = e.target.value.trim().toLowerCase(); aRenderPassengersList(); });
+  await aRenderPassengersList();
+}
+async function aRenderPassengersList(){
   const list = $('a-passengers-list');
   list.innerHTML = '<div class="skel" style="height:60px;"></div>';
   try{
     const snap = await db.collection('users').get();
-    const passengers = snap.docs.map(d=>Object.assign({uid:d.id}, d.data())).filter(u=>u.role==='passenger');
-    if(passengers.length===0){ list.innerHTML = `<div class="empty-state"><p>No passengers yet</p></div>`; return; }
+    let passengers = snap.docs.map(d=>Object.assign({uid:d.id}, d.data())).filter(u=>u.role==='passenger');
+    if(aPassengerSearchQuery){
+      passengers = passengers.filter(p=> (p.name||'').toLowerCase().includes(aPassengerSearchQuery) || (p.email||'').toLowerCase().includes(aPassengerSearchQuery));
+    }
+    if(passengers.length===0){ list.innerHTML = `<div class="empty-state"><p>${aPassengerSearchQuery ? 'No passengers match your search' : 'No passengers yet'}</p></div>`; return; }
     list.innerHTML = '';
     passengers.forEach(p=>{
       const el = document.createElement('div'); el.className='card';
@@ -2389,7 +2495,7 @@ async function aRenderPassengers(){
       el.querySelector('[data-toggle]').addEventListener('click', async ()=>{
         await db.collection('users').doc(p.uid).update({ suspended: !p.suspended });
         toast(p.suspended ? 'Passenger reactivated.':'Passenger suspended.', 'ok');
-        aRenderPassengers();
+        aRenderPassengersList();
       });
       list.appendChild(el);
     });
