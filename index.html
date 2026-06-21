@@ -883,18 +883,39 @@ function loadGoogleMaps(){
   return mapsLoadingPromise;
 }
 function renderMapInto(elId, fallbackId, center){
-  loadGoogleMaps().then(ok=>{
-    const el = $(elId);
-    if(!ok || !el || !window.google) return; // fallback div stays visible
-    const fb = $(fallbackId); if(fb) fb.style.display = 'none';
-    const map = new google.maps.Map(el, { center: center || {lat:serviceArea.lat,lng:serviceArea.lng}, zoom: 14, disableDefaultUI:true, zoomControl:true });
-    new google.maps.Circle({
-      strokeColor:'#0B6E4F', strokeOpacity:0.6, strokeWeight:2,
-      fillColor:'#0B6E4F', fillOpacity:0.08,
-      map, center:{lat:serviceArea.lat,lng:serviceArea.lng}, radius: serviceArea.radiusKm*1000
+  if(MAPS_API_KEY){
+    loadGoogleMaps().then(ok=>{
+      if(ok && window.google){
+        const el = $(elId);
+        if(!el) return;
+        const fb = $(fallbackId); if(fb) fb.style.display = 'none';
+        const map = new google.maps.Map(el, { center: center || {lat:serviceArea.lat,lng:serviceArea.lng}, zoom: 14, disableDefaultUI:true, zoomControl:true });
+        new google.maps.Circle({
+          strokeColor:'#0B6E4F', strokeOpacity:0.6, strokeWeight:2,
+          fillColor:'#0B6E4F', fillOpacity:0.08,
+          map, center:{lat:serviceArea.lat,lng:serviceArea.lng}, radius: serviceArea.radiusKm*1000
+        });
+        if(center){ new google.maps.Marker({ position: center, map, title:'You' }); }
+      } else {
+        renderFreeMapEmbed(elId, fallbackId, center);
+      }
     });
-    if(center){ new google.maps.Marker({ position: center, map, title:'You' }); }
-  });
+  } else {
+    renderFreeMapEmbed(elId, fallbackId, center);
+  }
+}
+// Free Google Maps embed — no API key, no billing, no Google Cloud setup.
+// Uses Google's longstanding public iframe endpoint (stable since ~2014).
+// Tradeoff vs the full JS SDK above: no custom overlays (geofence circle),
+// no live-updating markers, no in-page Places autocomplete — just a real,
+// pannable/zoomable Google map centered on the given point.
+function renderFreeMapEmbed(elId, fallbackId, center){
+  const el = $(elId);
+  if(!el) return;
+  const fb = $(fallbackId); if(fb) fb.style.display = 'none';
+  const point = center || { lat: serviceArea.lat, lng: serviceArea.lng };
+  const src = `https://maps.google.com/maps?q=${point.lat},${point.lng}&z=14&output=embed`;
+  el.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 }
 function attachAutocomplete(inputEl, onPlace){
   loadGoogleMaps().then(ok=>{
