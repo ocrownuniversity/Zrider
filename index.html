@@ -254,11 +254,12 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
   <div class="zr-eyebrow">PLAN YOUR TRIP</div>
   <div class="field" style="margin-top:10px;"><label>Pickup</label><input type="text" id="p-pickup" placeholder="Use my location or search…"></div>
   <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (must be within Ikeja)"></div>
-  <div class="row gap" style="margin-bottom:14px;flex-wrap:wrap;">
+  <div class="row gap" style="margin-bottom:10px;flex-wrap:wrap;">
     <button class="btn btn-outline btn-sm" id="p-use-gps">📍 Use current location</button>
     <button class="btn btn-outline btn-sm hidden" id="p-quick-home">🏠 Home</button>
     <button class="btn btn-outline btn-sm hidden" id="p-quick-work">💼 Work</button>
   </div>
+  <div id="p-recent-destinations" style="margin-bottom:14px;"></div>
   <div class="card hidden" id="p-fare-card">
     <div class="row"><span class="muted">Distance</span><span class="meter" id="p-fare-distance">—</span></div>
     <div class="row" style="margin-top:6px;"><span class="muted">Est. trip time</span><span class="meter" id="p-fare-time">—</span></div>
@@ -292,7 +293,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 <template id="tpl-p-active-ride">
   <div class="sheet-handle"></div>
   <div class="row"><span class="pill pill-amber" id="p-ride-status-pill"><span class="pill-dot"></span>STATUS</span><span class="meter" id="p-ride-fare">₦0</span></div>
-  <div class="card" style="margin-top:12px;">
+  <div id="p-ride-stepper" style="margin:14px 0;"></div>
+  <div class="card">
     <div class="row gap">
       <div class="avatar" id="p-rider-avatar">R</div>
       <div style="flex:1;">
@@ -468,7 +470,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 <template id="tpl-r-active">
   <div class="sheet-handle"></div>
   <div class="row"><span class="pill pill-amber" id="r-trip-status-pill"><span class="pill-dot"></span>STATUS</span><span class="meter" id="r-trip-fare">₦0</span></div>
-  <div class="card" style="margin-top:12px;">
+  <div id="r-trip-stepper" style="margin:14px 0;"></div>
+  <div class="card">
     <div class="row gap">
       <div class="avatar" id="r-trip-avatar">P</div>
       <div style="flex:1;"><strong id="r-trip-passenger">—</strong><p class="muted" id="r-trip-phone">—</p></div>
@@ -479,7 +482,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <div class="row" style="margin-bottom:6px;"><span class="muted">Pickup</span><span style="font-size:12.5px;text-align:right;max-width:60%;" id="r-trip-pickup">—</span></div>
     <div class="row"><span class="muted">Destination</span><span style="font-size:12.5px;text-align:right;max-width:60%;" id="r-trip-dest">—</span></div>
   </div>
-  <button class="btn btn-primary" id="r-advance-status" style="margin-top:14px;">Mark as arrived</button>
+  <a class="btn btn-amber" id="r-navigate" style="margin-top:12px;" target="_blank" rel="noopener">🧭 Navigate</a>
+  <button class="btn btn-primary" id="r-advance-status" style="margin-top:10px;">Mark as arrived</button>
   <button class="btn btn-ghost" id="r-report-issue" style="color:var(--ink-700);">Report an issue</button>
   <button class="btn btn-ghost" id="r-cancel-trip" style="color:var(--red-600);">Cancel trip</button>
 </template>
@@ -522,6 +526,10 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       <div class="row"><span class="muted">Total earned</span><span class="meter" id="r-total-earned">₦0</span></div>
       <div class="divider"></div>
       <div class="row"><span class="muted">Total trips</span><span class="meter" id="r-total-trips">0</span></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="zr-eyebrow">LAST 7 DAYS · EARNINGS</div>
+      <div id="r-earnings-chart" style="margin-top:14px;"></div>
     </div>
     <h3 style="margin-top:18px;">Withdrawal requests</h3>
     <div id="r-withdraw-list" style="margin-top:10px;"></div>
@@ -774,6 +782,20 @@ let activeChatRideId = null;
 
 const root = document.getElementById('zr-root');
 
+// ---------- Connectivity banner ----------
+function setupConnectivityBanner(){
+  const banner = document.createElement('div');
+  banner.id = 'zr-offline-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:300;background:var(--red-600);color:#fff;text-align:center;font-size:12.5px;font-weight:600;padding:8px;display:none;';
+  banner.textContent = "You're offline — reconnecting…";
+  document.body.appendChild(banner);
+  function update(){ banner.style.display = navigator.onLine ? 'none' : 'block'; }
+  window.addEventListener('online', ()=>{ update(); toast('Back online.', 'ok'); });
+  window.addEventListener('offline', update);
+  update();
+}
+setupConnectivityBanner();
+
 // ---------- DOM / UTIL HELPERS ----------
 function $(id){ return document.getElementById(id); }
 function clone(tplId){ return document.getElementById(tplId).content.cloneNode(true); }
@@ -807,6 +829,34 @@ function timeAgo(ts){
   if(diff < 3600) return Math.floor(diff/60)+'m ago';
   if(diff < 86400) return Math.floor(diff/3600)+'h ago';
   return d.toLocaleDateString();
+}
+// Renders a simple horizontal progress stepper (e.g. Accepted → Arriving → In progress → Completed).
+function renderStepper(containerEl, steps, currentKey){
+  if(!containerEl) return;
+  const idx = steps.findIndex(s => s.key === currentKey);
+  containerEl.innerHTML = `<div style="display:flex;align-items:center;">
+    ${steps.map((s,i)=>{
+      const done = i < idx, active = i === idx;
+      const color = (done||active) ? 'var(--green-700)' : 'var(--surface-2)';
+      const textColor = (done||active) ? 'var(--ink-900)' : 'var(--ink-400)';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+        <div style="width:100%;display:flex;align-items:center;">
+          <div style="flex:1;height:3px;background:${i===0?'transparent':color};"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:${color};flex-shrink:0;${active?'box-shadow:0 0 0 4px '+ (done?'transparent':'var(--green-100)')+';':''}"></div>
+          <div style="flex:1;height:3px;background:${i===steps.length-1?'transparent':(i<idx?color:'var(--surface-2)')};"></div>
+        </div>
+        <span style="font-size:9.5px;margin-top:5px;color:${textColor};font-weight:${active?'700':'500'};text-align:center;">${s.label}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+// Opens turn-by-turn navigation in Google Maps — works with coordinates or a
+// plain address, and needs no API key (it's just a deep-link URL).
+function mapsDirectionsUrl(point){
+  if(point && point.lat != null && point.lng != null){
+    return `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}&travelmode=driving`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((point && point.address) || '')}&travelmode=driving`;
 }
 function openModal(tplId, onReady){
   const overlay = document.createElement('div');
@@ -1200,6 +1250,7 @@ function fileToCompressedDataURL(file, maxDim, startQuality){
 let pCurrentTab = 'home';
 let pPickup = null;     // {lat,lng,address}
 let pDestination = null;// {lat,lng,address}
+let pRebookDestination = null; // set by "Book again" on a history item
 
 function renderPassengerApp(){
   mount('tpl-app-passenger');
@@ -1240,6 +1291,13 @@ function pRenderHomeTab(){
   pRenderSheet('form');
 }
 
+let pLastSeenRide = { id:null, status:null };
+const P_STATUS_MESSAGES = {
+  accepted: 'A rider has accepted your trip!',
+  arriving: 'Your rider has arrived at pickup.',
+  ongoing: 'Your trip has started.',
+  completed: "You've arrived — trip completed."
+};
 function pListenActiveRide(){
   const unsub = db.collection('rides')
     .where('passengerId','==', currentUser.uid)
@@ -1247,12 +1305,19 @@ function pListenActiveRide(){
     .onSnapshot(snap => {
       if(snap.empty){
         activeRideId = null;
+        pLastSeenRide = { id:null, status:null };
         if(pCurrentTab==='home') pRenderSheet('form');
         return;
       }
       const doc = snap.docs[0];
       activeRideId = doc.id;
       const ride = Object.assign({id:doc.id}, doc.data());
+
+      if(pLastSeenRide.id === ride.id && pLastSeenRide.status !== ride.status && P_STATUS_MESSAGES[ride.status]){
+        toast(P_STATUS_MESSAGES[ride.status], 'ok');
+      }
+      pLastSeenRide = { id: ride.id, status: ride.status };
+
       if(pCurrentTab==='home'){
         if(ride.status === 'searching') pRenderSheet('searching', ride);
         else if(['accepted','arriving','ongoing'].includes(ride.status)) pRenderSheet('active', ride);
@@ -1319,6 +1384,48 @@ function pSheetForm(sheet){
   });
 
   $('p-request-ride').addEventListener('click', pRequestRide);
+  loadRecentDestinations();
+
+  // "Book again" from history prefills these and jumps straight to the form.
+  if(pRebookDestination){
+    pDestination = pRebookDestination;
+    $('p-destination').value = pRebookDestination.address;
+    pRebookDestination = null;
+    getCurrentPosition().then(pos=>{
+      pPickup = { lat: pos.lat, lng: pos.lng, address: 'Current location' };
+      $('p-pickup').value = 'Current location (GPS)';
+      pUpdateFare();
+    }).catch(()=> pUpdateFare());
+  }
+}
+
+async function loadRecentDestinations(){
+  const box = $('p-recent-destinations');
+  if(!box) return;
+  try{
+    const snap = await db.collection('rides').where('passengerId','==',currentUser.uid).get();
+    let rides = snap.docs.map(d=>d.data()).filter(r=>r.status==='completed');
+    rides.sort((a,b)=> (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+    const seen = new Set();
+    const recents = [];
+    for(const r of rides){
+      const addr = r.destination?.address;
+      if(addr && !seen.has(addr)){ seen.add(addr); recents.push(r.destination); }
+      if(recents.length >= 3) break;
+    }
+    if(recents.length === 0 || !box) return;
+    box.innerHTML = `<p class="muted" style="font-size:11px;margin-bottom:6px;">Recent destinations</p>
+      <div class="row gap" style="flex-wrap:wrap;">${recents.map((d,i)=>
+        `<button class="btn btn-outline btn-sm" data-recent="${i}" style="font-size:12px;">${d.address.length > 22 ? d.address.slice(0,22)+'…' : d.address}</button>`
+      ).join('')}</div>`;
+    box.querySelectorAll('[data-recent]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        pDestination = recents[parseInt(btn.dataset.recent)];
+        $('p-destination').value = pDestination.address;
+        pUpdateFare();
+      });
+    });
+  }catch(e){ /* non-critical — fail silently */ }
 }
 
 function pUpdateFare(){
@@ -1423,6 +1530,10 @@ async function pSheetActive(sheet, ride){
   const pill = $('p-ride-status-pill');
   pill.className = 'pill ' + cls;
   pill.innerHTML = `<span class="pill-dot"></span>${label}`;
+  renderStepper($('p-ride-stepper'), [
+    {key:'accepted',label:'Accepted'}, {key:'arriving',label:'Arriving'},
+    {key:'ongoing',label:'In trip'}, {key:'completed',label:'Done'}
+  ], ride.status);
   $('p-ride-fare').textContent = fmtNaira(ride.fare);
   $('p-route-pickup').textContent = ride.pickup.address;
   $('p-route-dest').textContent = ride.destination.address;
@@ -1498,7 +1609,16 @@ async function pRenderHistoryTab(){
       el.innerHTML = `
         <div class="row">${statusPill}<span class="meter">${fmtNaira(r.fare)}</span></div>
         <p style="margin-top:8px;font-size:13px;">${r.pickup.address} → ${r.destination.address}</p>
-        <p class="muted" style="margin-top:4px;">${timeAgo(r.createdAt)} · ${fmtKm(r.distanceKm)}</p>`;
+        <p class="muted" style="margin-top:4px;">${timeAgo(r.createdAt)} · ${fmtKm(r.distanceKm)}</p>
+        ${r.status==='completed' ? `<button class="btn btn-outline btn-sm" data-rebook style="margin-top:10px;">Book again</button>` : ''}`;
+      if(r.status === 'completed'){
+        el.querySelector('[data-rebook]').addEventListener('click', ()=>{
+          pRebookDestination = r.destination;
+          pSwitchTab('home');
+          pRenderSheet('form');
+          toast('Destination filled in — confirm pickup to request.', 'ok');
+        });
+      }
       list.appendChild(el);
     });
   }catch(e){ list.innerHTML = `<div class="empty-state"><p>Couldn't load trips.</p></div>`; }
@@ -1868,9 +1988,27 @@ function rListenActiveRide(){
       const doc = snap.docs[0];
       activeRideId = doc.id;
       const ride = Object.assign({id:doc.id}, doc.data());
-      if(rCurrentTab==='home') rRenderSheetActive(ride);
+      if(rCurrentTab==='home'){
+        if(ride.status === 'cancelled') rSheetCancelled(ride);
+        else rRenderSheetActive(ride);
+      }
     }, err => console.warn('rider active ride listener error', err));
   activeListeners.push(unsub);
+}
+
+function rSheetCancelled(ride){
+  const sheet = $('r-sheet');
+  sheet.innerHTML = `
+    <div class="sheet-handle"></div>
+    <div style="text-align:center;padding:14px 0;">
+      <div style="font-size:30px;">✕</div>
+      <h3 style="margin-top:8px;">Trip cancelled</h3>
+      <p class="muted" style="margin-top:4px;">${ride.cancelledBy==='passenger' ? 'The passenger cancelled this trip.' : 'You cancelled this trip.'}</p>
+      <button class="btn btn-primary" id="r-back-online" style="margin-top:16px;">Back online</button>
+    </div>`;
+  $('r-back-online').addEventListener('click', async ()=>{
+    await db.collection('rides').doc(ride.id).update({ riderActive:false });
+  });
 }
 
 function rRenderSheetActive(ride){
@@ -1886,6 +2024,10 @@ function rRenderSheetActive(ride){
   const pill = $('r-trip-status-pill');
   pill.className = 'pill ' + cls;
   pill.innerHTML = `<span class="pill-dot"></span>${label}`;
+  renderStepper($('r-trip-stepper'), [
+    {key:'accepted',label:'Accepted'}, {key:'arriving',label:'Arrived'},
+    {key:'ongoing',label:'In trip'}, {key:'completed',label:'Done'}
+  ], ride.status);
   $('r-trip-fare').textContent = fmtNaira(ride.fare);
   $('r-trip-passenger').textContent = ride.passengerName;
   $('r-trip-avatar').textContent = initials(ride.passengerName);
@@ -1894,6 +2036,10 @@ function rRenderSheetActive(ride){
   $('r-trip-dest').textContent = ride.destination.address;
   $('r-call-passenger').addEventListener('click', ()=> window.location.href = `tel:${ride.passengerPhone||''}`);
   $('r-chat-passenger').addEventListener('click', ()=> openChat(ride.id, ride.passengerName));
+
+  const navTarget = ride.status === 'ongoing' ? ride.destination : ride.pickup;
+  $('r-navigate').textContent = '🧭 Navigate to ' + (ride.status === 'ongoing' ? 'destination' : 'pickup');
+  $('r-navigate').href = mapsDirectionsUrl(navTarget);
 
   $('r-advance-status').textContent = btnLabel;
   $('r-advance-status').addEventListener('click', async ()=>{
@@ -1945,6 +2091,11 @@ async function rRenderEarningsTab(){
   $('r-total-trips').textContent = (riderDoc.totalTrips||0).toString();
   $('r-withdraw-btn').addEventListener('click', openWithdrawModal);
   rLoadWithdrawals();
+  try{
+    const snap = await db.collection('rides').where('riderId','==',currentUser.uid).get();
+    const completed = snap.docs.map(d=>d.data()).filter(r=>r.status==='completed');
+    renderSevenDayChart('r-earnings-chart', completed, r=>r.riderEarning||0, v=>fmtNaira(v));
+  }catch(e){ /* chart is non-critical */ }
 }
 
 function openWithdrawModal(){
@@ -2082,7 +2233,7 @@ async function aRenderOverview(){
     const completed = rides.filter(r=>r.status==='completed');
     $('a-stat-completed').textContent = completed.length;
     $('a-stat-gross').textContent = fmtNaira(completed.reduce((s,r)=>s+(r.fare||0),0));
-    renderSevenDayChart(completed);
+    renderSevenDayChart('a-chart-7day', completed, ()=>1);
 
     const live = rides.filter(r=>['searching','accepted','arriving','ongoing'].includes(r.status));
     const liveBox = $('a-live-trips');
@@ -2100,30 +2251,31 @@ async function aRenderOverview(){
   }catch(e){ toast('Could not load overview data.', 'err'); }
 }
 
-// ---- Admin: simple 7-day inline bar chart (no chart library needed) ----
-function renderSevenDayChart(completedRides){
-  const box = $('a-chart-7day');
+// ---- Shared: simple 7-day inline bar chart (no chart library needed) ----
+function renderSevenDayChart(boxId, rides, valueFn, fmtFn){
+  const box = $(boxId);
   if(!box) return;
   const days = [];
   for(let i=6; i>=0; i--){
     const d = new Date();
     d.setDate(d.getDate() - i);
     d.setHours(0,0,0,0);
-    days.push({ date:d, label: d.toLocaleDateString('en-NG',{weekday:'short'}), count:0 });
+    days.push({ date:d, label: d.toLocaleDateString('en-NG',{weekday:'short'}), value:0 });
   }
-  completedRides.forEach(r=>{
+  rides.forEach(r=>{
     const t = r.completedAt?.toDate?.() || r.createdAt?.toDate?.();
     if(!t) return;
     const dayKey = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
     const match = days.find(d => d.date.getTime() === dayKey);
-    if(match) match.count++;
+    if(match) match.value += valueFn(r);
   });
-  const max = Math.max(1, ...days.map(d=>d.count));
+  const max = Math.max(1, ...days.map(d=>d.value));
+  const fmt = fmtFn || (v => v.toString());
   box.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;height:120px;">
     ${days.map(d => `
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
-        <span class="meter" style="font-size:11px;margin-bottom:4px;">${d.count}</span>
-        <div style="width:100%;border-radius:6px 6px 2px 2px;background:var(--green-700);height:${Math.max(4, (d.count/max)*84)}px;"></div>
+        <span class="meter" style="font-size:10px;margin-bottom:4px;">${fmt(d.value)}</span>
+        <div style="width:100%;border-radius:6px 6px 2px 2px;background:var(--green-700);height:${Math.max(4, (d.value/max)*84)}px;"></div>
         <span class="muted" style="font-size:10px;margin-top:6px;">${d.label}</span>
       </div>`).join('')}
   </div>`;
