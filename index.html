@@ -669,6 +669,12 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <div class="field"><label>Radius (km)</label><input type="number" step="0.1" id="a-area-radius"></div>
     <button class="btn btn-primary" id="a-save-area">Save service area</button>
   </div>
+  <div class="card" style="margin-top:12px;">
+    <div class="zr-eyebrow">RECOGNIZED AREA NAMES</div>
+    <p class="muted" style="margin-top:4px;margin-bottom:10px;">Used to check pickup/destination when exact GPS coordinates aren't available (e.g. no Maps API key set). Add any neighborhood, road, or landmark name inside your zone — comma separated.</p>
+    <textarea id="a-area-keywords" rows="5" style="width:100%;border:1.5px solid var(--surface-2);border-radius:10px;padding:10px;font-size:13px;" placeholder="ikeja, opebi, allen avenue, oregun, alausa…"></textarea>
+    <button class="btn btn-outline" id="a-save-keywords" style="margin-top:10px;">Save area names</button>
+  </div>
 </template>
 
 <template id="tpl-a-withdrawals">
@@ -756,7 +762,13 @@ const firebaseConfig = {
 const MAPS_API_KEY = "";         // <-- add Google Maps JS API key here
 const PAYSTACK_PUBLIC_KEY = "";  // <-- add Paystack public key here
 const ADMIN_EMAIL = "oladejiridwanopeyemi@gmail.com";
-const DEFAULT_SERVICE_AREA = { name: "Ikeja LGA", lat: 6.6018, lng: 3.3515, radiusKm: 7 };
+const DEFAULT_SERVICE_AREA = {
+  name: "Ikeja LGA", lat: 6.6018, lng: 3.3515, radiusKm: 7,
+  areaKeywords: ['ikeja','opebi','allen avenue','allen ave','oregun','agidingbi','alausa',
+    'anifowoshe','adeniyi jones','toyin street','toyin','awolowo way','oba akran',
+    'computer village','otigba','mobolaji bank anthony','sobo arobiodu','adekunle fajuyi',
+    'isaac john','joel ogunnaike','kudirat abiola way','oduduwa way','gra']
+};
 const DEFAULT_FARE_RULES = { baseFare: 200, perKm: 60, perMin: 10, minFare: 300, commissionPct: 15 };
 
 // ---------- FIREBASE INIT ----------
@@ -887,11 +899,13 @@ function isInServiceArea(lat,lng){
   return haversineKm(lat,lng,serviceArea.lat,serviceArea.lng) <= serviceArea.radiusKm;
 }
 // Use this wherever a point might be coordinate-less (typed address, no Maps key
-// configured) — falls back to checking the address text for the service area's name.
+// configured) — falls back to checking the address text against known area names.
 function isLikelyInServiceArea(point){
   if(!point) return false;
   if(point.lat != null && point.lng != null) return isInServiceArea(point.lat, point.lng);
-  return (point.address || '').toLowerCase().includes(serviceArea.name.split(' ')[0].toLowerCase());
+  const text = (point.address || '').toLowerCase();
+  const keywords = (serviceArea.areaKeywords && serviceArea.areaKeywords.length) ? serviceArea.areaKeywords : [serviceArea.name];
+  return keywords.some(k => text.includes(k.toLowerCase()));
 }
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
@@ -2449,6 +2463,8 @@ function aRenderArea(){
   $('a-area-lat').value = serviceArea.lat;
   $('a-area-lng').value = serviceArea.lng;
   $('a-area-radius').value = serviceArea.radiusKm;
+  $('a-area-keywords').value = (serviceArea.areaKeywords || []).join(', ');
+
   $('a-save-area').addEventListener('click', async ()=>{
     const updated = {
       name: $('a-area-name').value.trim() || 'Ikeja LGA',
@@ -2457,9 +2473,17 @@ function aRenderArea(){
       radiusKm: parseFloat($('a-area-radius').value)
     };
     if(isNaN(updated.lat) || isNaN(updated.lng) || isNaN(updated.radiusKm)){ toast('Enter valid numbers.', 'err'); return; }
-    await db.collection('settings').doc('serviceArea').set(updated);
-    serviceArea = updated;
+    await db.collection('settings').doc('serviceArea').set(updated, { merge:true });
+    Object.assign(serviceArea, updated);
     toast('Service area updated.', 'ok');
+  });
+
+  $('a-save-keywords').addEventListener('click', async ()=>{
+    const keywords = $('a-area-keywords').value.split(',').map(k=>k.trim().toLowerCase()).filter(Boolean);
+    if(keywords.length === 0){ toast('Add at least one area name.', 'err'); return; }
+    await db.collection('settings').doc('serviceArea').set({ areaKeywords: keywords }, { merge:true });
+    serviceArea.areaKeywords = keywords;
+    toast('Recognized area names updated.', 'ok');
   });
 }
 
