@@ -184,10 +184,10 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       </div>
 
       <div id="auth-mode-register" class="hidden">
-        <div class="field"><label>Full name</label><input type="text" id="reg-name" placeholder="Ridwan Opeyemi"></div>
-        <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="you@email.com"></div>
-        <div class="field"><label>Phone number</label><input type="tel" id="reg-phone" placeholder="080 000 0000"></div>
-        <div class="field"><label>Password</label><input type="password" id="reg-password" placeholder="Min. 6 characters"></div>
+        <div class="field"><label>Full name <span style="color:var(--red-600);">*</span></label><input type="text" id="reg-name" placeholder="Ridwan Opeyemi"></div>
+        <div class="field"><label>Email <span style="color:var(--red-600);">*</span></label><input type="email" id="reg-email" placeholder="you@email.com"></div>
+        <div class="field"><label>Phone number <span style="color:var(--red-600);">*</span></label><input type="tel" id="reg-phone" placeholder="080 000 0000"></div>
+        <div class="field"><label>Password <span style="color:var(--red-600);">*</span></label><input type="password" id="reg-password" placeholder="Min. 6 characters"></div>
         <button class="btn btn-primary" id="btn-register">Create account</button>
         <p class="tab-link">Already have an account? <b id="go-login">Log in</b></p>
       </div>
@@ -232,7 +232,13 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 
 <!-- Passenger HOME content -->
 <template id="tpl-p-home">
-  <div style="position:relative;">
+  <div class="row" style="padding:14px 16px 0;">
+    <div>
+      <p class="muted" style="font-size:12px;" id="p-greeting-line">Good day</p>
+      <h3 style="margin-top:2px;" id="p-greeting-name">—</h3>
+    </div>
+  </div>
+  <div style="position:relative;margin-top:10px;">
     <div class="map-wrap">
       <div id="map-passenger" class="gmap"></div>
       <div class="map-fallback" id="map-passenger-fallback">📍 Map loads once a Google Maps API key is set in the code (see MAPS_API_KEY).</div>
@@ -248,12 +254,20 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
   <div class="zr-eyebrow">PLAN YOUR TRIP</div>
   <div class="field" style="margin-top:10px;"><label>Pickup</label><input type="text" id="p-pickup" placeholder="Use my location or search…"></div>
   <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (must be within Ikeja)"></div>
-  <div class="row gap" style="margin-bottom:14px;">
+  <div class="row gap" style="margin-bottom:14px;flex-wrap:wrap;">
     <button class="btn btn-outline btn-sm" id="p-use-gps">📍 Use current location</button>
+    <button class="btn btn-outline btn-sm hidden" id="p-quick-home">🏠 Home</button>
+    <button class="btn btn-outline btn-sm hidden" id="p-quick-work">💼 Work</button>
   </div>
   <div class="card hidden" id="p-fare-card">
     <div class="row"><span class="muted">Distance</span><span class="meter" id="p-fare-distance">—</span></div>
-    <div class="row" style="margin-top:6px;"><span class="muted">Estimated fare</span><span class="meter" id="p-fare-amount" style="font-size:20px;color:var(--green-700);">—</span></div>
+    <div class="row" style="margin-top:6px;"><span class="muted">Est. trip time</span><span class="meter" id="p-fare-time">—</span></div>
+    <div class="divider"></div>
+    <div class="row" style="font-size:12.5px;"><span class="muted">Base fare</span><span class="meter" id="p-fare-base">—</span></div>
+    <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">Distance charge</span><span class="meter" id="p-fare-distcharge">—</span></div>
+    <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">Time charge</span><span class="meter" id="p-fare-timecharge">—</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="muted">Total fare</span><span class="meter" id="p-fare-amount" style="font-size:20px;color:var(--green-700);">—</span></div>
     <div class="route-stripe" style="margin:12px 0;"></div>
     <div class="field" style="margin-bottom:8px;"><label>Pay with</label>
       <select id="p-pay-method"><option value="cash">Cash to rider</option><option value="card">Card / Bank (Paystack)</option></select>
@@ -301,6 +315,16 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 <!-- Passenger rate rider -->
 <template id="tpl-p-rate">
   <div class="sheet-handle"></div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="zr-eyebrow">TRIP RECEIPT</div>
+    <div class="row" style="margin-top:8px;font-size:12.5px;"><span class="muted">From</span><span style="text-align:right;max-width:65%;" id="p-receipt-pickup">—</span></div>
+    <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">To</span><span style="text-align:right;max-width:65%;" id="p-receipt-dest">—</span></div>
+    <div class="route-stripe" style="margin:10px 0;"></div>
+    <div class="row" style="font-size:12.5px;"><span class="muted">Distance</span><span id="p-receipt-distance">—</span></div>
+    <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">Payment method</span><span id="p-receipt-payment">—</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="muted">Total paid</span><span class="meter" style="font-size:18px;color:var(--green-700);" id="p-receipt-fare">₦0</span></div>
+  </div>
   <div style="text-align:center;">
     <div class="avatar" style="width:60px;height:60px;font-size:22px;margin:0 auto 10px;" id="p-rate-avatar">R</div>
     <h3>Trip completed</h3>
@@ -320,7 +344,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 <!-- Passenger history -->
 <template id="tpl-p-history">
   <div class="screen-body">
-    <h2>Trip history</h2>
+    <div class="row"><h2>Trip history</h2><button class="icon-btn" id="p-history-refresh">↻</button></div>
     <div id="p-history-list" style="margin-top:14px;"></div>
   </div>
 </template>
@@ -328,7 +352,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 <!-- Passenger notifications -->
 <template id="tpl-p-notifs">
   <div class="screen-body">
-    <h2>Notifications</h2>
+    <div class="row"><h2>Notifications</h2><button class="icon-btn" id="p-notifs-refresh">↻</button></div>
     <div id="p-notifs-list" style="margin-top:14px;"></div>
   </div>
 </template>
@@ -346,6 +370,13 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       <div class="field"><label>Full name</label><input type="text" id="p-edit-name"></div>
       <div class="field"><label>Phone</label><input type="text" id="p-edit-phone"></div>
       <button class="btn btn-primary" id="p-save-profile">Save changes</button>
+    </div>
+    <div class="card">
+      <div class="zr-eyebrow">SAVED PLACES</div>
+      <p class="muted" style="margin-top:4px;margin-bottom:10px;">Add Home and Work for one-tap booking.</p>
+      <div class="field"><label>🏠 Home address</label><input type="text" id="p-edit-home" placeholder="Search address…"></div>
+      <div class="field"><label>💼 Work address</label><input type="text" id="p-edit-work" placeholder="Search address…"></div>
+      <button class="btn btn-outline" id="p-save-places">Save places</button>
     </div>
     <button class="btn btn-outline" id="p-logout" style="margin-top:12px;">Log out</button>
   </div>
@@ -376,7 +407,13 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 
 <!-- Rider HOME content -->
 <template id="tpl-r-home">
-  <div style="position:relative;">
+  <div class="row" style="padding:14px 16px 0;">
+    <div>
+      <p class="muted" style="font-size:12px;" id="r-greeting-line">Good day</p>
+      <h3 style="margin-top:2px;" id="r-greeting-name">—</h3>
+    </div>
+  </div>
+  <div style="position:relative;margin-top:10px;">
     <div class="map-wrap">
       <div id="map-rider" class="gmap"></div>
       <div class="map-fallback" id="map-rider-fallback">📍 Map loads once a Google Maps API key is set in the code.</div>
@@ -494,7 +531,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 <!-- Rider history -->
 <template id="tpl-r-history">
   <div class="screen-body">
-    <h2>Trip history</h2>
+    <div class="row"><h2>Trip history</h2><button class="icon-btn" id="r-history-refresh">↻</button></div>
     <div id="r-history-list" style="margin-top:14px;"></div>
   </div>
 </template>
@@ -565,6 +602,10 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <div class="row"><span class="muted">Completed trips (all time)</span><span class="meter" id="a-stat-completed">0</span></div>
     <div class="divider"></div>
     <div class="row"><span class="muted">Gross fares collected</span><span class="meter" id="a-stat-gross">₦0</span></div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="zr-eyebrow">LAST 7 DAYS · COMPLETED TRIPS</div>
+    <div id="a-chart-7day" style="margin-top:14px;"></div>
   </div>
   <h3 style="margin-top:18px;">Live trips</h3>
   <div id="a-live-trips" style="margin-top:10px;"></div>
@@ -796,11 +837,24 @@ function isInServiceArea(lat,lng){
   return haversineKm(lat,lng,serviceArea.lat,serviceArea.lng) <= serviceArea.radiusKm;
 }
 function computeFare(distanceKm){
+  return computeFareBreakdown(distanceKm).total;
+}
+function computeFareBreakdown(distanceKm){
   const r = fareRules;
   const estMinutes = distanceKm * 3.2;
-  let fare = r.baseFare + distanceKm*r.perKm + estMinutes*r.perMin;
-  fare = Math.max(fare, r.minFare);
-  return Math.round(fare/10)*10;
+  const distCharge = distanceKm * r.perKm;
+  const timeCharge = estMinutes * r.perMin;
+  let total = r.baseFare + distCharge + timeCharge;
+  total = Math.max(total, r.minFare);
+  total = Math.round(total/10)*10;
+  return { base: Math.round(r.baseFare), distCharge: Math.round(distCharge), timeCharge: Math.round(timeCharge), total, estMinutes: Math.round(estMinutes) };
+}
+function getGreeting(){
+  const h = new Date().getHours();
+  if(h < 5) return 'Still up?';
+  if(h < 12) return 'Good morning';
+  if(h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 function getCurrentPosition(){
   return new Promise((resolve,reject)=>{
@@ -1157,6 +1211,8 @@ function pRenderHomeTab(){
   const c = $('p-screen-home');
   c.innerHTML = '';
   c.appendChild(clone('tpl-p-home'));
+  $('p-greeting-line').textContent = getGreeting();
+  $('p-greeting-name').textContent = (currentUserDoc.name || '').split(' ')[0] || 'there';
   $('p-sos').addEventListener('click', triggerSOS);
   getCurrentPosition().then(pos => renderMapInto('map-passenger','map-passenger-fallback', pos))
                        .catch(()=> renderMapInto('map-passenger','map-passenger-fallback', null));
@@ -1216,6 +1272,23 @@ function pSheetForm(sheet){
     $('p-use-gps').disabled = false;
   });
 
+  if(currentUserDoc.homePlace){
+    $('p-quick-home').classList.remove('hidden');
+    $('p-quick-home').addEventListener('click', ()=>{
+      pDestination = currentUserDoc.homePlace;
+      $('p-destination').value = pDestination.address;
+      pUpdateFare();
+    });
+  }
+  if(currentUserDoc.workPlace){
+    $('p-quick-work').classList.remove('hidden');
+    $('p-quick-work').addEventListener('click', ()=>{
+      pDestination = currentUserDoc.workPlace;
+      $('p-destination').value = pDestination.address;
+      pUpdateFare();
+    });
+  }
+
   $('p-destination').addEventListener('change', ()=>{
     if(!pDestination || pDestination.address !== $('p-destination').value){
       // No autocomplete match (e.g. no Maps key) — fall back to text-only destination
@@ -1247,12 +1320,16 @@ function pUpdateFare(){
   const distKm = pDestination.lat != null
     ? haversineKm(pPickup.lat, pPickup.lng, pDestination.lat, pDestination.lng)
     : 3.5; // reasonable default estimate when exact destination coords are unavailable
-  const fare = computeFare(distKm);
+  const breakdown = computeFareBreakdown(distKm);
   $('p-fare-distance').textContent = fmtKm(distKm);
-  $('p-fare-amount').textContent = fmtNaira(fare);
+  $('p-fare-time').textContent = '~' + breakdown.estMinutes + ' min';
+  $('p-fare-base').textContent = fmtNaira(breakdown.base);
+  $('p-fare-distcharge').textContent = fmtNaira(breakdown.distCharge);
+  $('p-fare-timecharge').textContent = fmtNaira(breakdown.timeCharge);
+  $('p-fare-amount').textContent = fmtNaira(breakdown.total);
   $('p-fare-card').classList.remove('hidden');
   $('p-fare-card').dataset.distKm = distKm;
-  $('p-fare-card').dataset.fare = fare;
+  $('p-fare-card').dataset.fare = breakdown.total;
 }
 
 async function pRequestRide(){
@@ -1296,9 +1373,11 @@ async function pRequestRide(){
 
 function pSheetSearching(sheet, ride){
   sheet.appendChild(clone('tpl-p-searching'));
-  $('p-cancel-search').addEventListener('click', async ()=>{
-    await db.collection('rides').doc(ride.id).update({ status:'cancelled', passengerActive:true, cancelledBy:'passenger' });
-    toast('Ride request cancelled.');
+  $('p-cancel-search').addEventListener('click', ()=>{
+    promptCancelReason(CANCEL_REASONS_PASSENGER, async (reason)=>{
+      await db.collection('rides').doc(ride.id).update({ status:'cancelled', passengerActive:true, cancelledBy:'passenger', cancelReason:reason });
+      toast('Ride request cancelled.');
+    });
   });
 }
 
@@ -1332,7 +1411,7 @@ async function pSheetActive(sheet, ride){
     const rbike = await db.collection('riders').doc(ride.riderId).get();
     if(rsnap.exists){
       const rd = rsnap.data();
-      $('p-rider-name').textContent = rd.name;
+      $('p-rider-name').innerHTML = `${rd.name} <span class="badge-verify">✓ Verified</span>`;
       $('p-rider-avatar').textContent = initials(rd.name);
       if(rd.photoURL) $('p-rider-avatar').innerHTML = `<img src="${rd.photoURL}">`;
       $('p-rider-bike').textContent = rbike.exists ? `${rbike.data().bikeModel} · ${rbike.data().plate}` : 'Bike rider';
@@ -1340,15 +1419,22 @@ async function pSheetActive(sheet, ride){
       $('p-chat-rider').addEventListener('click', ()=> openChat(ride.id, rd.name));
     }
   }
-  $('p-cancel-ride').addEventListener('click', async ()=>{
-    await db.collection('rides').doc(ride.id).update({ status:'cancelled', cancelledBy:'passenger' });
-    toast('Trip cancelled.');
+  $('p-cancel-ride').addEventListener('click', ()=>{
+    promptCancelReason(CANCEL_REASONS_PASSENGER, async (reason)=>{
+      await db.collection('rides').doc(ride.id).update({ status:'cancelled', cancelledBy:'passenger', cancelReason:reason });
+      toast('Trip cancelled.');
+    });
   });
   $('p-report-issue').addEventListener('click', ()=> openComplaintModal(ride.id));
 }
 
 function pSheetRate(sheet, ride){
   sheet.appendChild(clone('tpl-p-rate'));
+  $('p-receipt-pickup').textContent = ride.pickup.address;
+  $('p-receipt-dest').textContent = ride.destination.address;
+  $('p-receipt-distance').textContent = fmtKm(ride.distanceKm);
+  $('p-receipt-payment').textContent = ride.paymentMethod === 'card' ? 'Card / Bank' : 'Cash';
+  $('p-receipt-fare').textContent = fmtNaira(ride.fare);
   $('p-rate-rider-name').textContent = ride.riderName || 'your rider';
   let rating = 5;
   const stars = $('p-stars').querySelectorAll('svg');
@@ -1375,6 +1461,7 @@ async function pRenderHistoryTab(){
   const c = $('p-screen-history');
   c.innerHTML = '';
   c.appendChild(clone('tpl-p-history'));
+  $('p-history-refresh').addEventListener('click', pRenderHistoryTab);
   const list = $('p-history-list');
   list.innerHTML = '<div class="skel" style="height:60px;margin-bottom:10px;"></div><div class="skel" style="height:60px;"></div>';
   try{
@@ -1401,6 +1488,7 @@ async function pRenderNotifsTab(){
   const c = $('p-screen-notifs');
   c.innerHTML = '';
   c.appendChild(clone('tpl-p-notifs'));
+  $('p-notifs-refresh').addEventListener('click', ()=> loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger'));
   loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger');
 }
 
@@ -1423,6 +1511,29 @@ function pRenderProfileTab(){
     currentUserDoc.name = name; currentUserDoc.phone = phone;
     toast('Profile updated.', 'ok');
   });
+
+  let editHomePlace = currentUserDoc.homePlace || null;
+  let editWorkPlace = currentUserDoc.workPlace || null;
+  $('p-edit-home').value = editHomePlace ? editHomePlace.address : '';
+  $('p-edit-work').value = editWorkPlace ? editWorkPlace.address : '';
+  attachAutocomplete($('p-edit-home'), place => { editHomePlace = place; $('p-edit-home').value = place.address; });
+  attachAutocomplete($('p-edit-work'), place => { editWorkPlace = place; $('p-edit-work').value = place.address; });
+  $('p-save-places').addEventListener('click', async ()=>{
+    if($('p-edit-home').value.trim() && (!editHomePlace || editHomePlace.address !== $('p-edit-home').value.trim())){
+      editHomePlace = { lat:null, lng:null, address: $('p-edit-home').value.trim() };
+    }
+    if($('p-edit-work').value.trim() && (!editWorkPlace || editWorkPlace.address !== $('p-edit-work').value.trim())){
+      editWorkPlace = { lat:null, lng:null, address: $('p-edit-work').value.trim() };
+    }
+    const update = {};
+    if(editHomePlace) update.homePlace = editHomePlace;
+    if(editWorkPlace) update.workPlace = editWorkPlace;
+    if(Object.keys(update).length === 0){ toast('Add an address first.', 'err'); return; }
+    await db.collection('users').doc(currentUser.uid).update(update);
+    Object.assign(currentUserDoc, update);
+    toast('Saved places updated.', 'ok');
+  });
+
   $('p-logout').addEventListener('click', doLogout);
 }
 
@@ -1549,9 +1660,53 @@ function promptRating(title, onSubmit){
   overlay.querySelector('#generic-submit').addEventListener('click', ()=>{ onSubmit(rating); overlay.remove(); });
 }
 
+// ---- Shared: quick cancellation-reason picker ----
+function promptCancelReason(reasons, onConfirm){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal"><div class="modal-head"><h3>Why are you cancelling?</h3></div>
+    <div id="cancel-reason-list"></div></div>`;
+  document.body.appendChild(overlay);
+  const list = overlay.querySelector('#cancel-reason-list');
+  reasons.forEach(reason=>{
+    const b = document.createElement('button');
+    b.className = 'btn btn-outline';
+    b.style.marginBottom = '8px';
+    b.textContent = reason;
+    b.addEventListener('click', ()=>{ overlay.remove(); onConfirm(reason); });
+    list.appendChild(b);
+  });
+  const keep = document.createElement('button');
+  keep.className = 'btn btn-ghost';
+  keep.textContent = "Never mind, keep the trip";
+  keep.addEventListener('click', ()=> overlay.remove());
+  list.appendChild(keep);
+}
+const CANCEL_REASONS_PASSENGER = ['Rider is taking too long','Wrong pickup location','Found another ride','Changed my mind','Other'];
+const CANCEL_REASONS_RIDER = ['Passenger unreachable','Passenger not at pickup','Vehicle issue','Unsafe situation','Other'];
+
 // ============================== RIDER APP ==============================
 let rCurrentTab = 'home';
 let rDeclinedIds = new Set();
+let lastAlertedRideId = null;
+
+function alertNewRequest(){
+  try{
+    if(navigator.vibrate) navigator.vibrate([200,80,200]);
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175].forEach((freq, i)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + i*0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.18 + 0.16);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + i*0.18);
+      osc.stop(ctx.currentTime + i*0.18 + 0.17);
+    });
+  }catch(e){ /* audio not available — silent fail is fine */ }
+}
 
 function renderRiderApp(){
   mount('tpl-app-rider');
@@ -1584,6 +1739,8 @@ function rRenderHomeTab(){
   const c = $('r-screen-home');
   c.innerHTML = '';
   c.appendChild(clone('tpl-r-home'));
+  $('r-greeting-line').textContent = getGreeting();
+  $('r-greeting-name').textContent = (currentUserDoc.name || '').split(' ')[0] || 'there';
   getCurrentPosition().then(pos => renderMapInto('map-rider','map-rider-fallback', pos))
                        .catch(()=> renderMapInto('map-rider','map-rider-fallback', null));
   rRenderSheetIdle();
@@ -1645,6 +1802,7 @@ function rListenIncomingRequests(){
 }
 
 function rRenderSheetIncoming(ride){
+  if(lastAlertedRideId !== ride.id){ lastAlertedRideId = ride.id; alertNewRequest(); }
   const sheet = $('r-sheet');
   sheet.innerHTML = '';
   sheet.appendChild(clone('tpl-r-incoming'));
@@ -1722,9 +1880,11 @@ function rRenderSheetActive(ride){
     else if(ride.status === 'arriving'){ await db.collection('rides').doc(ride.id).update({ status:'ongoing', startedAt: FieldValue.serverTimestamp() }); }
     else if(ride.status === 'ongoing'){ await riderCompleteTrip(ride); }
   });
-  $('r-cancel-trip').addEventListener('click', async ()=>{
-    await db.collection('rides').doc(ride.id).update({ status:'cancelled', cancelledBy:'rider', riderActive:false });
-    toast('Trip cancelled.');
+  $('r-cancel-trip').addEventListener('click', ()=>{
+    promptCancelReason(CANCEL_REASONS_RIDER, async (reason)=>{
+      await db.collection('rides').doc(ride.id).update({ status:'cancelled', cancelledBy:'rider', riderActive:false, cancelReason:reason });
+      toast('Trip cancelled.');
+    });
   });
   $('r-report-issue').addEventListener('click', ()=> openComplaintModal(ride.id));
 }
@@ -1815,6 +1975,7 @@ async function rRenderHistoryTab(){
   const c = $('r-screen-history');
   c.innerHTML = '';
   c.appendChild(clone('tpl-r-history'));
+  $('r-history-refresh').addEventListener('click', rRenderHistoryTab);
   const list = $('r-history-list');
   list.innerHTML = '<div class="skel" style="height:60px;margin-bottom:10px;"></div>';
   try{
@@ -1900,6 +2061,7 @@ async function aRenderOverview(){
     const completed = rides.filter(r=>r.status==='completed');
     $('a-stat-completed').textContent = completed.length;
     $('a-stat-gross').textContent = fmtNaira(completed.reduce((s,r)=>s+(r.fare||0),0));
+    renderSevenDayChart(completed);
 
     const live = rides.filter(r=>['searching','accepted','arriving','ongoing'].includes(r.status));
     const liveBox = $('a-live-trips');
@@ -1915,6 +2077,35 @@ async function aRenderOverview(){
       });
     }
   }catch(e){ toast('Could not load overview data.', 'err'); }
+}
+
+// ---- Admin: simple 7-day inline bar chart (no chart library needed) ----
+function renderSevenDayChart(completedRides){
+  const box = $('a-chart-7day');
+  if(!box) return;
+  const days = [];
+  for(let i=6; i>=0; i--){
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0,0,0,0);
+    days.push({ date:d, label: d.toLocaleDateString('en-NG',{weekday:'short'}), count:0 });
+  }
+  completedRides.forEach(r=>{
+    const t = r.completedAt?.toDate?.() || r.createdAt?.toDate?.();
+    if(!t) return;
+    const dayKey = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+    const match = days.find(d => d.date.getTime() === dayKey);
+    if(match) match.count++;
+  });
+  const max = Math.max(1, ...days.map(d=>d.count));
+  box.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;height:120px;">
+    ${days.map(d => `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <span class="meter" style="font-size:11px;margin-bottom:4px;">${d.count}</span>
+        <div style="width:100%;border-radius:6px 6px 2px 2px;background:var(--green-700);height:${Math.max(4, (d.count/max)*84)}px;"></div>
+        <span class="muted" style="font-size:10px;margin-top:6px;">${d.label}</span>
+      </div>`).join('')}
+  </div>`;
 }
 
 // ---- Riders ----
