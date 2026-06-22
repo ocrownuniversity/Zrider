@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>Zrider — Bike Rides in Ikeja</title>
-<meta name="description" content="Zrider: fast, affordable motorcycle rides across Ikeja LGA, Lagos.">
+<title>Zrider — Bike Rides in Ikeja & Kosofe</title>
+<meta name="description" content="Zrider: fast, affordable motorcycle rides across Ikeja and Kosofe LGA, Lagos.">
 <meta name="theme-color" content="#0B6E4F">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B6E4F'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B6E4F'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
@@ -169,8 +169,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
         <div class="brand-mark">Z</div>
         <span class="zr-eyebrow" style="color:var(--amber-500);">ZRIDER</span>
       </div>
-      <h1>Bike rides across Ikeja, on demand.</h1>
-      <p>Quick okada pickups, fair meter pricing, only within Ikeja LGA.</p>
+      <h1>Bike rides across Ikeja & Kosofe, on demand.</h1>
+      <p>Quick okada pickups, fair meter pricing, within Ikeja and Kosofe LGA.</p>
     </div>
     <div class="auth-card">
       <div class="role-toggle" id="auth-role-toggle">
@@ -252,6 +252,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       <p class="muted" style="font-size:12px;" id="p-greeting-line">Good day</p>
       <h3 style="margin-top:2px;" id="p-greeting-name">—</h3>
     </div>
+    <span class="pill pill-green" style="font-size:10px;">📍 Ikeja & Kosofe</span>
   </div>
   <div style="position:relative;margin-top:10px;">
     <div class="map-wrap">
@@ -268,7 +269,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
   <div class="sheet-handle"></div>
   <div class="zr-eyebrow">PLAN YOUR TRIP</div>
   <div class="field" style="margin-top:10px;"><label>Pickup</label><input type="text" id="p-pickup" placeholder="Use my location or search…"></div>
-  <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (must be within Ikeja)"></div>
+  <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (Ikeja or Kosofe LGA)"></div>
   <div class="row gap" style="margin-bottom:10px;flex-wrap:wrap;">
     <button class="btn btn-outline btn-sm" id="p-use-gps">📍 Use current location</button>
     <button class="btn btn-outline btn-sm hidden" id="p-quick-home">🏠 Home</button>
@@ -681,20 +682,12 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 </template>
 
 <template id="tpl-a-area">
-  <h2>Service area restriction</h2>
-  <p class="muted" style="margin-top:6px;">Zrider only allows rides with both pickup and destination inside this zone. Default is centered on Ikeja LGA.</p>
-  <div class="card" style="margin-top:14px;">
-    <div class="field"><label>Zone name</label><input type="text" id="a-area-name" placeholder="Ikeja LGA"></div>
-    <div class="field"><label>Center latitude</label><input type="number" step="0.0001" id="a-area-lat"></div>
-    <div class="field"><label>Center longitude</label><input type="number" step="0.0001" id="a-area-lng"></div>
-    <div class="field"><label>Radius (km)</label><input type="number" step="0.1" id="a-area-radius"></div>
-    <button class="btn btn-primary" id="a-save-area">Save service area</button>
-  </div>
-  <div class="card" style="margin-top:12px;">
-    <div class="zr-eyebrow">RECOGNIZED AREA NAMES</div>
-    <p class="muted" style="margin-top:4px;margin-bottom:10px;">Used to check pickup/destination when exact GPS coordinates aren't available (e.g. no Maps API key set). Add any neighborhood, road, or landmark name inside your zone — comma separated.</p>
-    <textarea id="a-area-keywords" rows="5" style="width:100%;border:1.5px solid var(--surface-2);border-radius:10px;padding:10px;font-size:13px;" placeholder="ikeja, opebi, allen avenue, oregun, alausa…"></textarea>
-    <button class="btn btn-outline" id="a-save-keywords" style="margin-top:10px;">Save area names</button>
+  <h2>Service areas</h2>
+  <p class="muted" style="margin-top:6px;">Zrider operates across all zones listed below. Rides must start and end within the same zone or any active zone.</p>
+  <div id="a-zone-list" style="margin-top:14px;"></div>
+  <div class="card" style="margin-top:14px;background:var(--green-100);">
+    <div class="zr-eyebrow">ACTIVE ZONES</div>
+    <div id="a-zone-summary" style="margin-top:8px;"></div>
   </div>
 </template>
 
@@ -783,13 +776,31 @@ const firebaseConfig = {
 const MAPS_API_KEY = "";         // <-- add Google Maps JS API key here
 const PAYSTACK_PUBLIC_KEY = "";  // <-- add Paystack public key here
 const ADMIN_EMAIL = "oladejiridwanopeyemi@gmail.com";
-const DEFAULT_SERVICE_AREA = {
-  name: "Ikeja LGA", lat: 6.6018, lng: 3.3515, radiusKm: 7,
-  areaKeywords: ['ikeja','opebi','allen avenue','allen ave','oregun','agidingbi','alausa',
-    'anifowoshe','adeniyi jones','toyin street','toyin','awolowo way','oba akran',
-    'computer village','otigba','mobolaji bank anthony','sobo arobiodu','adekunle fajuyi',
-    'isaac john','joel ogunnaike','kudirat abiola way','oduduwa way','gra']
-};
+const DEFAULT_SERVICE_ZONES = [
+  {
+    id: 'ikeja',
+    name: 'Ikeja LGA',
+    lat: 6.6018, lng: 3.3515, radiusKm: 7,
+    areaKeywords: ['ikeja','opebi','allen avenue','allen ave','oregun','agidingbi','alausa',
+      'anifowoshe','adeniyi jones','toyin street','toyin','awolowo way','oba akran',
+      'computer village','otigba','mobolaji bank anthony','sobo arobiodu','adekunle fajuyi',
+      'isaac john','joel ogunnaike','kudirat abiola way','oduduwa way','gra','maryland',
+      'palmgrove','ikeja gra','medical road','airport road']
+  },
+  {
+    id: 'kosofe',
+    name: 'Kosofe LGA',
+    lat: 6.5833, lng: 3.4000, radiusKm: 7,
+    areaKeywords: ['kosofe','ketu','mile 12','mile12','oworo','alapere','ojota','agboville',
+      'magodo','shangisha','omole','berger','anthony village','gbagada','oworonshoki',
+      'bariga','ifako','aguda','kosofe road','ikorodu road','clay','medina']
+  }
+];
+// Backward-compat single-zone alias (used by fare calc distance default)
+const DEFAULT_SERVICE_AREA = Object.assign({}, DEFAULT_SERVICE_ZONES[0]);
+let serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
+// Keep a flat alias for legacy code that references serviceArea.name in warning messages
+let serviceArea = { name: 'Ikeja & Kosofe LGA', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords), lat: DEFAULT_SERVICE_ZONES[0].lat, lng: DEFAULT_SERVICE_ZONES[0].lng, radiusKm: DEFAULT_SERVICE_ZONES[0].radiusKm };
 const DEFAULT_FARE_RULES = { baseFare: 200, perKm: 60, perMin: 10, minFare: 300, commissionPct: 15 };
 
 // ---------- FIREBASE INIT ----------
@@ -803,7 +814,6 @@ let currentUser = null;      // firebase auth user
 let currentUserDoc = null;   // users/{uid} data
 let currentRole = null;      // 'passenger' | 'rider' | 'admin'
 let riderDoc = null;         // riders/{uid} data (riders only)
-let serviceArea = DEFAULT_SERVICE_AREA;
 let fareRules = DEFAULT_FARE_RULES;
 let activeListeners = [];    // unsubscribe fns, cleared on screen change
 let mapsLoaded = false;
@@ -917,16 +927,15 @@ function haversineKm(lat1,lng1,lat2,lng2){
 }
 function isInServiceArea(lat,lng){
   if(lat==null || lng==null) return false;
-  return haversineKm(lat,lng,serviceArea.lat,serviceArea.lng) <= serviceArea.radiusKm;
+  return serviceZones.some(z => haversineKm(lat,lng,z.lat,z.lng) <= z.radiusKm);
 }
-// Use this wherever a point might be coordinate-less (typed address, no Maps key
-// configured) — falls back to checking the address text against known area names.
+// Fallback when exact coordinates aren't available — checks address text against all zone keywords.
 function isLikelyInServiceArea(point){
   if(!point) return false;
   if(point.lat != null && point.lng != null) return isInServiceArea(point.lat, point.lng);
   const text = (point.address || '').toLowerCase();
-  const keywords = (serviceArea.areaKeywords && serviceArea.areaKeywords.length) ? serviceArea.areaKeywords : [serviceArea.name];
-  return keywords.some(k => text.includes(k.toLowerCase()));
+  const allKeywords = serviceZones.flatMap(z => z.areaKeywords || [z.name]);
+  return allKeywords.some(k => text.includes(k.toLowerCase()));
 }
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
@@ -1005,8 +1014,11 @@ function renderFreeMapEmbed(elId, fallbackId, center){
   const el = $(elId);
   if(!el) return;
   const fb = $(fallbackId); if(fb) fb.style.display = 'none';
-  const point = center || { lat: serviceArea.lat, lng: serviceArea.lng };
-  const src = `https://maps.google.com/maps?q=${point.lat},${point.lng}&z=14&output=embed`;
+  // Default to midpoint between Ikeja and Kosofe so both zones are visible.
+  const defaultCenter = { lat: (serviceZones[0].lat + (serviceZones[1]?.lat||serviceZones[0].lat))/2, lng: (serviceZones[0].lng + (serviceZones[1]?.lng||serviceZones[0].lng))/2 };
+  const point = center || defaultCenter;
+  const zoom = center ? 14 : 12; // zoom out slightly when showing full coverage area
+  const src = `https://maps.google.com/maps?q=${point.lat},${point.lng}&z=${zoom}&output=embed`;
   el.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 }
 function attachAutocomplete(inputEl, onPlace){
@@ -1033,13 +1045,27 @@ function attachAutocomplete(inputEl, onPlace){
 function loadSettings(){
   return Promise.all([
     db.collection('settings').doc('fareRules').get(),
-    db.collection('settings').doc('serviceArea').get()
-  ]).then(([fr, sa])=>{
+    db.collection('settings').doc('serviceZones').get()
+  ]).then(([fr, sz])=>{
     fareRules = fr.exists ? Object.assign({}, DEFAULT_FARE_RULES, fr.data()) : DEFAULT_FARE_RULES;
-    serviceArea = sa.exists ? Object.assign({}, DEFAULT_SERVICE_AREA, sa.data()) : DEFAULT_SERVICE_AREA;
     if(!fr.exists) db.collection('settings').doc('fareRules').set(DEFAULT_FARE_RULES).catch(()=>{});
-    if(!sa.exists) db.collection('settings').doc('serviceArea').set(DEFAULT_SERVICE_AREA).catch(()=>{});
-  }).catch(()=>{ fareRules = DEFAULT_FARE_RULES; serviceArea = DEFAULT_SERVICE_AREA; });
+    if(sz.exists && sz.data().zones && sz.data().zones.length){
+      serviceZones = sz.data().zones;
+    } else {
+      serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
+      if(!sz.exists) db.collection('settings').doc('serviceZones').set({ zones: DEFAULT_SERVICE_ZONES }).catch(()=>{});
+    }
+    // Keep flat serviceArea alias up-to-date for legacy warning messages
+    serviceArea = {
+      name: serviceZones.map(z=>z.name).join(' & '),
+      areaKeywords: serviceZones.flatMap(z=>z.areaKeywords||[z.name]),
+      lat: serviceZones[0].lat, lng: serviceZones[0].lng, radiusKm: serviceZones[0].radiusKm
+    };
+  }).catch(()=>{
+    fareRules = DEFAULT_FARE_RULES;
+    serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
+    serviceArea = { name:'Ikeja & Kosofe LGA', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords||[]), lat:DEFAULT_SERVICE_ZONES[0].lat, lng:DEFAULT_SERVICE_ZONES[0].lng, radiusKm:DEFAULT_SERVICE_ZONES[0].radiusKm };
+  });
 }
 
 // ---------- BOOTSTRAP / ROUTING ----------
@@ -1154,7 +1180,7 @@ function renderAuth(){
       try{
         await auth.sendPasswordResetEmail(email);
         msg.style.color = 'var(--green-700)';
-        msg.textContent = 'Reset link sent — check your inbox.';
+        msg.textContent = 'Reset link sent — check your inbox and spam/junk folder.';
       }catch(e){
         msg.style.color = 'var(--red-600)';
         msg.textContent = friendlyAuthError(e);
@@ -2565,32 +2591,42 @@ function aRenderPricing(){
 function aRenderArea(){
   const c = $('a-screen-area'); c.innerHTML = '';
   c.appendChild(clone('tpl-a-area'));
-  $('a-area-name').value = serviceArea.name;
-  $('a-area-lat').value = serviceArea.lat;
-  $('a-area-lng').value = serviceArea.lng;
-  $('a-area-radius').value = serviceArea.radiusKm;
-  $('a-area-keywords').value = (serviceArea.areaKeywords || []).join(', ');
 
-  $('a-save-area').addEventListener('click', async ()=>{
-    const updated = {
-      name: $('a-area-name').value.trim() || 'Ikeja LGA',
-      lat: parseFloat($('a-area-lat').value),
-      lng: parseFloat($('a-area-lng').value),
-      radiusKm: parseFloat($('a-area-radius').value)
-    };
-    if(isNaN(updated.lat) || isNaN(updated.lng) || isNaN(updated.radiusKm)){ toast('Enter valid numbers.', 'err'); return; }
-    await db.collection('settings').doc('serviceArea').set(updated, { merge:true });
-    Object.assign(serviceArea, updated);
-    toast('Service area updated.', 'ok');
-  });
+  const zoneList = $('a-zone-list');
+  const summary = $('a-zone-summary');
+  summary.innerHTML = serviceZones.map(z=>`<p style="font-size:13px;margin-bottom:4px;">✅ <strong>${z.name}</strong> — ${z.radiusKm}km radius</p>`).join('');
 
-  $('a-save-keywords').addEventListener('click', async ()=>{
-    const keywords = $('a-area-keywords').value.split(',').map(k=>k.trim().toLowerCase()).filter(Boolean);
-    if(keywords.length === 0){ toast('Add at least one area name.', 'err'); return; }
-    await db.collection('settings').doc('serviceArea').set({ areaKeywords: keywords }, { merge:true });
-    serviceArea.areaKeywords = keywords;
-    toast('Recognized area names updated.', 'ok');
-  });
+  function renderZoneCard(zone, idx){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '12px';
+    card.innerHTML = `
+      <div class="zr-eyebrow">ZONE ${idx+1}</div>
+      <div class="field" style="margin-top:10px;"><label>Zone name</label><input type="text" id="a-zone-name-${idx}" value="${zone.name}"></div>
+      <div class="field"><label>Center latitude</label><input type="number" step="0.0001" id="a-zone-lat-${idx}" value="${zone.lat}"></div>
+      <div class="field"><label>Center longitude</label><input type="number" step="0.0001" id="a-zone-lng-${idx}" value="${zone.lng}"></div>
+      <div class="field"><label>Radius (km)</label><input type="number" step="0.1" id="a-zone-radius-${idx}" value="${zone.radiusKm}"></div>
+      <div class="field"><label>Recognized area names (comma separated)</label>
+        <textarea id="a-zone-keywords-${idx}" rows="3" style="width:100%;border:1.5px solid var(--surface-2);border-radius:10px;padding:10px;font-size:13px;">${(zone.areaKeywords||[]).join(', ')}</textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" id="a-save-zone-${idx}">Save zone</button>`;
+    zoneList.appendChild(card);
+    document.getElementById(`a-save-zone-${idx}`).addEventListener('click', async ()=>{
+      const name = document.getElementById(`a-zone-name-${idx}`).value.trim();
+      const lat = parseFloat(document.getElementById(`a-zone-lat-${idx}`).value);
+      const lng = parseFloat(document.getElementById(`a-zone-lng-${idx}`).value);
+      const radiusKm = parseFloat(document.getElementById(`a-zone-radius-${idx}`).value);
+      const keywords = document.getElementById(`a-zone-keywords-${idx}`).value.split(',').map(k=>k.trim().toLowerCase()).filter(Boolean);
+      if(!name || isNaN(lat) || isNaN(lng) || isNaN(radiusKm)){ toast('Fill in all zone fields.', 'err'); return; }
+      serviceZones[idx] = Object.assign({}, serviceZones[idx], { name, lat, lng, radiusKm, areaKeywords: keywords });
+      await db.collection('settings').doc('serviceZones').set({ zones: serviceZones });
+      serviceArea.name = serviceZones.map(z=>z.name).join(' & ');
+      serviceArea.areaKeywords = serviceZones.flatMap(z=>z.areaKeywords||[]);
+      toast(`${name} zone saved.`, 'ok');
+      summary.innerHTML = serviceZones.map(z=>`<p style="font-size:13px;margin-bottom:4px;">✅ <strong>${z.name}</strong> — ${z.radiusKm}km radius</p>`).join('');
+    });
+  }
+  serviceZones.forEach((z,i) => renderZoneCard(z,i));
 }
 
 // ---- Withdrawals ----
