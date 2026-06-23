@@ -233,6 +233,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
             <button type="button" id="reg-pw-toggle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:17px;cursor:pointer;color:var(--ink-400);">👁</button>
           </div>
         </div>
+        <div class="field"><label>Referral code <span style="color:var(--ink-400);font-weight:400;">(optional)</span></label><input type="text" id="reg-referral" placeholder="e.g. ZRABC123" style="text-transform:uppercase;"></div>
         <button class="btn btn-primary" id="btn-register">Create account</button>
         <p class="tab-link">Already have an account? <b id="go-login">Log in</b></p>
       </div>
@@ -258,18 +259,18 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <div class="topbar">
       <div class="brand"><div class="brand-mark">Z</div><strong>Zrider</strong></div>
       <div class="row gap">
-        <button class="icon-btn" id="p-open-notifs">🔔</button>
+        <button class="icon-btn" id="p-open-notifs" title="Notifications">🔔</button>
         <div class="avatar" id="p-avatar">P</div>
       </div>
     </div>
     <div id="p-screen-home" class="screen-tab"></div>
     <div id="p-screen-history" class="screen-tab hidden"></div>
-    <div id="p-screen-notifs" class="screen-tab hidden"></div>
+    <div id="p-screen-wallet" class="screen-tab hidden"></div>
     <div id="p-screen-profile" class="screen-tab hidden"></div>
     <div class="bottomnav" id="p-bottomnav">
       <button data-tab="home" class="active">🏠<span>Home</span></button>
       <button data-tab="history">🧾<span>Trips</span></button>
-      <button data-tab="notifs">🔔<span>Alerts</span></button>
+      <button data-tab="wallet">💰<span>Wallet</span></button>
       <button data-tab="profile">👤<span>Profile</span></button>
     </div>
   </div>
@@ -317,7 +318,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <div class="row"><span class="muted">Total fare</span><span class="meter" id="p-fare-amount" style="font-size:20px;color:var(--green-700);">—</span></div>
     <div class="route-stripe" style="margin:12px 0;"></div>
     <div class="field" style="margin-bottom:8px;"><label>Pay with</label>
-      <select id="p-pay-method"><option value="cash">Cash to rider</option><option value="card">Card / Bank (Paystack)</option></select>
+      <select id="p-pay-method"><option value="cash">Cash to rider</option><option value="wallet">Wallet balance</option><option value="card">Card / Bank (Paystack)</option></select>
+      <p id="p-wallet-hint" class="muted" style="font-size:11px;margin-top:4px;"></p>
     </div>
     <button class="btn btn-amber" id="p-request-ride">Request bike</button>
   </div>
@@ -400,10 +402,134 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 
 <!-- Passenger notifications -->
 <template id="tpl-p-notifs">
-  <div class="screen-body">
-    <div class="row"><h2>Notifications</h2><button class="icon-btn" id="p-notifs-refresh">↻</button></div>
-    <div id="p-notifs-list" style="margin-top:14px;"></div>
+  <div class="modal">
+    <div class="modal-head"><h3>Notifications</h3><div style="display:flex;gap:8px;"><button class="icon-btn" id="p-notifs-refresh">↻</button><button class="modal-close" data-close>✕</button></div></div>
+    <div id="p-notifs-list"></div>
   </div>
+</template>
+
+<!-- Passenger Wallet Tab -->
+<template id="tpl-p-wallet">
+  <div class="screen-body">
+    <!-- Balance card -->
+    <div style="background:linear-gradient(135deg,#1a1a1a 0%,#000 100%);border:1px solid var(--amber-500);border-radius:var(--radius-l);padding:22px;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,177,0,.06);"></div>
+      <div style="position:absolute;bottom:-30px;left:-10px;width:80px;height:80px;border-radius:50%;background:rgba(255,177,0,.04);"></div>
+      <p class="zr-eyebrow" style="margin-bottom:8px;">WALLET BALANCE</p>
+      <div class="meter" id="pw-balance" style="font-size:34px;color:var(--amber-500);">₦0</div>
+      <p class="muted" style="font-size:11px;margin-top:6px;">Available for ride payments</p>
+      <div class="btn-block-row" style="margin-top:16px;">
+        <button class="btn btn-primary btn-sm" id="pw-fund-btn">+ Add money</button>
+        <button class="btn btn-outline btn-sm" id="pw-refer-btn">🎁 Refer & Earn</button>
+      </div>
+    </div>
+    <!-- Referral teaser -->
+    <div class="card" id="pw-referral-card" style="margin-bottom:0;">
+      <div class="row">
+        <div><p class="zr-eyebrow">REFERRAL CODE</p><span class="meter" id="pw-refcode" style="font-size:18px;letter-spacing:.08em;">—</span></div>
+        <button class="btn btn-outline btn-sm" id="pw-copy-code">Copy</button>
+      </div>
+      <div class="divider"></div>
+      <div class="row">
+        <div><p class="muted" style="font-size:12px;">Total referred</p><span class="meter" id="pw-ref-count">0</span></div>
+        <div style="text-align:right;"><p class="muted" style="font-size:12px;">Referral earnings</p><span class="meter" id="pw-ref-earnings" style="color:var(--amber-500);">₦0</span></div>
+      </div>
+    </div>
+    <!-- Transactions -->
+    <h3 style="margin-top:18px;margin-bottom:10px;">Transaction history</h3>
+    <div id="pw-tx-list"></div>
+  </div>
+</template>
+
+<!-- Deposit modal: choose method -->
+<template id="tpl-deposit-method">
+  <div class="modal">
+    <div class="modal-head"><h3>Add money to wallet</h3><button class="modal-close" data-close>✕</button></div>
+    <p class="muted" style="margin-bottom:16px;">Choose how you want to fund your wallet.</p>
+    <button class="btn btn-primary" id="dep-paystack-btn" style="margin-bottom:10px;">⚡ Pay with Paystack (Instant)</button>
+    <button class="btn btn-outline" id="dep-bank-btn">🏦 Manual Bank Transfer</button>
+  </div>
+</template>
+
+<!-- Deposit: manual bank transfer -->
+<template id="tpl-deposit-bank">
+  <div class="modal">
+    <div class="modal-head"><h3>Bank Transfer</h3><button class="modal-close" data-close>✕</button></div>
+    <div style="background:var(--surface-2);border-radius:var(--radius-s);padding:14px;margin-bottom:16px;">
+      <div class="zr-eyebrow" style="margin-bottom:10px;">TRANSFER TO THIS ACCOUNT</div>
+      <div class="row" style="margin-bottom:6px;"><span class="muted">Bank</span><strong>Opay</strong></div>
+      <div class="row" style="margin-bottom:6px;"><span class="muted">Account name</span><strong>Zmonie Service</strong></div>
+      <div class="row">
+        <span class="muted">Account number</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <strong class="meter" style="font-size:16px;letter-spacing:.1em;">08140738888</strong>
+          <button class="btn btn-outline btn-sm" id="dep-copy-acct">Copy</button>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Amount transferred (₦) <span style="color:var(--red-600);">*</span></label><input type="number" id="dep-amount" placeholder="e.g. 2000" min="100"></div>
+    <div class="field"><label>Transaction reference <span style="color:var(--ink-400);font-weight:400;">(optional)</span></label><input type="text" id="dep-ref" placeholder="From your bank or Opay app"></div>
+    <div class="field"><label>Payment receipt photo <span style="color:var(--ink-400);font-weight:400;">(recommended)</span></label><input type="file" id="dep-receipt" accept="image/*"></div>
+    <p class="muted" style="font-size:11px;margin-bottom:14px;">⚠️ Your wallet will be credited after admin verifies the transfer. This usually takes a few minutes to a few hours.</p>
+    <button class="btn btn-primary" id="dep-submit-bank">Submit deposit request</button>
+    <p id="dep-error" style="color:var(--red-600);font-size:12px;margin-top:8px;"></p>
+  </div>
+</template>
+
+<!-- Referral modal -->
+<template id="tpl-referral-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>Refer & Earn</h3><button class="modal-close" data-close>✕</button></div>
+    <div style="text-align:center;padding:10px 0 20px;">
+      <div style="font-size:40px;">🎁</div>
+      <h3 style="margin-top:10px;">Earn when your friends ride</h3>
+      <p class="muted" style="margin-top:6px;font-size:13px;" id="ref-reward-desc">Share your code. When your friend completes their first trip, you both earn a reward.</p>
+    </div>
+    <div style="background:var(--surface-2);border-radius:var(--radius-s);padding:14px;text-align:center;margin-bottom:16px;">
+      <p class="muted" style="font-size:12px;margin-bottom:6px;">Your referral code</p>
+      <div class="meter" id="ref-modal-code" style="font-size:26px;letter-spacing:.12em;color:var(--amber-500);">—</div>
+    </div>
+    <button class="btn btn-primary" id="ref-share-btn" style="margin-bottom:10px;">📤 Share my referral link</button>
+    <button class="btn btn-outline" id="ref-copy-btn">Copy referral code</button>
+    <div class="divider"></div>
+    <h3 style="margin-bottom:10px;">My referrals</h3>
+    <div id="ref-list"></div>
+  </div>
+</template>
+
+<!-- Admin: wallet management tabs -->
+<template id="tpl-a-wallet">
+  <h2>Wallet Management</h2>
+  <div class="tabs-row" id="a-wallet-filter" style="margin-top:12px;">
+    <button data-wf="deposits" class="active">Deposits</button>
+    <button data-wf="transactions">All Transactions</button>
+    <button data-wf="manual-credit">Manual Credit/Debit</button>
+  </div>
+  <div id="a-wallet-content"></div>
+</template>
+
+<!-- Admin: referral management -->
+<template id="tpl-a-referrals">
+  <h2>Referral Program</h2>
+  <div class="card" style="margin-top:14px;">
+    <div class="zr-eyebrow">PROGRAM SETTINGS</div>
+    <div class="field" style="margin-top:12px;"><label>Enable referral program</label>
+      <select id="a-ref-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+    </div>
+    <div class="field"><label>Reward amount per referral (₦)</label><input type="number" id="a-ref-reward" placeholder="500"></div>
+    <div class="field"><label>Reward condition</label>
+      <select id="a-ref-condition">
+        <option value="first_trip">Referee completes first trip</option>
+        <option value="signup">Referee signs up</option>
+      </select>
+    </div>
+    <div class="field"><label>Auto-approve rewards</label>
+      <select id="a-ref-auto"><option value="true">Yes — credit instantly</option><option value="false">No — manual review</option></select>
+    </div>
+    <button class="btn btn-primary" id="a-save-ref-settings">Save settings</button>
+  </div>
+  <h3 style="margin-top:20px;">Referral records</h3>
+  <div id="a-ref-list" style="margin-top:10px;"></div>
 </template>
 
 <!-- Passenger profile -->
@@ -638,6 +764,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       <button data-tab="trips">Trips</button>
       <button data-tab="pricing">Pricing</button>
       <button data-tab="area">Service area</button>
+      <button data-tab="wallet">Wallets</button>
+      <button data-tab="referrals">Referrals</button>
       <button data-tab="withdrawals">Withdrawals</button>
       <button data-tab="complaints">Complaints</button>
       <button data-tab="broadcast">Notify</button>
@@ -648,6 +776,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
     <div id="a-screen-trips" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-pricing" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-area" class="screen-tab screen-body hidden"></div>
+    <div id="a-screen-wallet" class="screen-tab screen-body hidden"></div>
+    <div id="a-screen-referrals" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-withdrawals" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-complaints" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-broadcast" class="screen-tab screen-body hidden"></div>
@@ -815,6 +945,10 @@ const firebaseConfig = {
 const MAPS_API_KEY = "";         // <-- add Google Maps JS API key here
 const PAYSTACK_PUBLIC_KEY = "";  // <-- add Paystack public key here
 const ADMIN_EMAIL = "oladejiridwanopeyemi@gmail.com";
+const BANK_ACCOUNT = { bank:'Opay', name:'Zmonie Service', number:'08140738888' };
+const DEFAULT_REFERRAL_SETTINGS = { enabled:true, rewardAmount:500, condition:'first_trip', autoApprove:true };
+let referralSettings = Object.assign({}, DEFAULT_REFERRAL_SETTINGS);
+let currentWalletBalance = 0; // cached passenger wallet balance
 const DEFAULT_SERVICE_ZONES = [
   {
     id: 'ikeja',
@@ -1084,8 +1218,9 @@ function attachAutocomplete(inputEl, onPlace){
 function loadSettings(){
   return Promise.all([
     db.collection('settings').doc('fareRules').get(),
-    db.collection('settings').doc('serviceZones').get()
-  ]).then(([fr, sz])=>{
+    db.collection('settings').doc('serviceZones').get(),
+    db.collection('settings').doc('referral').get()
+  ]).then(([fr, sz, rf])=>{
     fareRules = fr.exists ? Object.assign({}, DEFAULT_FARE_RULES, fr.data()) : DEFAULT_FARE_RULES;
     if(!fr.exists) db.collection('settings').doc('fareRules').set(DEFAULT_FARE_RULES).catch(()=>{});
     if(sz.exists && sz.data().zones && sz.data().zones.length){
@@ -1094,16 +1229,18 @@ function loadSettings(){
       serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
       if(!sz.exists) db.collection('settings').doc('serviceZones').set({ zones: DEFAULT_SERVICE_ZONES }).catch(()=>{});
     }
-    // Keep flat serviceArea alias up-to-date for legacy warning messages
     serviceArea = {
       name: serviceZones.map(z=>z.name).join(' & '),
       areaKeywords: serviceZones.flatMap(z=>z.areaKeywords||[z.name]),
       lat: serviceZones[0].lat, lng: serviceZones[0].lng, radiusKm: serviceZones[0].radiusKm
     };
+    referralSettings = rf.exists ? Object.assign({}, DEFAULT_REFERRAL_SETTINGS, rf.data()) : DEFAULT_REFERRAL_SETTINGS;
+    if(!rf.exists) db.collection('settings').doc('referral').set(DEFAULT_REFERRAL_SETTINGS).catch(()=>{});
   }).catch(()=>{
     fareRules = DEFAULT_FARE_RULES;
     serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
     serviceArea = { name:'Ikeja & Kosofe LGA', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords||[]), lat:DEFAULT_SERVICE_ZONES[0].lat, lng:DEFAULT_SERVICE_ZONES[0].lng, radiusKm:DEFAULT_SERVICE_ZONES[0].radiusKm };
+    referralSettings = Object.assign({}, DEFAULT_REFERRAL_SETTINGS);
   });
 }
 
@@ -1246,6 +1383,7 @@ function renderAuth(){
     const email = $('reg-email').value.trim();
     const phone = $('reg-phone').value.trim();
     const pw = $('reg-password').value;
+    const refCode = ($('reg-referral').value || '').trim().toUpperCase();
     $('auth-error').textContent = '';
     if(!name || !email || !phone || !pw){ $('auth-error').textContent = 'Please fill in every field.'; return; }
     if(pw.length < 6){ $('auth-error').textContent = 'Password must be at least 6 characters.'; return; }
@@ -1254,13 +1392,44 @@ function renderAuth(){
       const isAdminEmail = email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
       const role = isAdminEmail ? 'admin' : pendingRequestRoleHint;
       const cred = await auth.createUserWithEmailAndPassword(email, pw);
-      await db.collection('users').doc(cred.user.uid).set({
-        name, email, phone, role, rating:5, ratingCount:0, photoURL:'', createdAt: FieldValue.serverTimestamp()
+      const uid = cred.user.uid;
+      const myRefCode = generateReferralCode(uid);
+
+      // Resolve referrer if a referral code was entered
+      let referrerId = null;
+      if(refCode && referralSettings.enabled){
+        const refSnap = await db.collection('users').where('referralCode','==',refCode).limit(1).get();
+        if(!refSnap.empty && refSnap.docs[0].id !== uid){
+          referrerId = refSnap.docs[0].id;
+        }
+      }
+
+      await db.collection('users').doc(uid).set({
+        name, email, phone, role, rating:5, ratingCount:0, photoURL:'',
+        referralCode: myRefCode, referredBy: referrerId || null,
+        createdAt: FieldValue.serverTimestamp()
       });
+
+      // Create wallet for every user
+      await db.collection('wallets').doc(uid).set({ balance:0, updatedAt: FieldValue.serverTimestamp() });
+
       if(role === 'rider'){
-        await db.collection('riders').doc(cred.user.uid).set({
+        await db.collection('riders').doc(uid).set({
           status:'incomplete', online:false, walletBalance:0, totalEarned:0, totalTrips:0, createdAt: FieldValue.serverTimestamp()
         });
+      }
+
+      // Create pending referral record if referred by someone and condition is signup
+      if(referrerId && referralSettings.enabled){
+        await db.collection('referrals').add({
+          referrerId, refereeName: name, refereeId: uid,
+          status: referralSettings.condition === 'signup' ? 'rewarded' : 'pending',
+          reward: referralSettings.rewardAmount, createdAt: FieldValue.serverTimestamp()
+        });
+        if(referralSettings.condition === 'signup'){
+          await creditWallet(referrerId, referralSettings.rewardAmount, 'Referral reward — ' + name + ' signed up');
+          await notifyUser(referrerId, 'Referral reward!', `${name} signed up with your code. ₦${referralSettings.rewardAmount} added to your wallet.`);
+        }
       }
       toast('Welcome to Zrider!', 'ok');
     }catch(e){
@@ -1390,6 +1559,72 @@ function fileToCompressedDataURL(file, maxDim, startQuality){
   });
 }
 
+// ============================== WALLET & REFERRAL HELPERS ==============================
+function generateReferralCode(uid){
+  return 'ZR' + uid.substring(0,6).toUpperCase();
+}
+async function ensureWallet(uid){
+  const ref = db.collection('wallets').doc(uid);
+  const snap = await ref.get();
+  if(!snap.exists){ await ref.set({ balance:0, updatedAt: FieldValue.serverTimestamp() }); return 0; }
+  return snap.data().balance || 0;
+}
+async function getWalletBalance(uid){
+  try{
+    const snap = await db.collection('wallets').doc(uid).get();
+    return snap.exists ? (snap.data().balance || 0) : 0;
+  }catch(e){ return 0; }
+}
+async function creditWallet(uid, amount, description, meta={}){
+  const ref = db.collection('wallets').doc(uid);
+  await db.runTransaction(async tx=>{
+    const snap = await tx.get(ref);
+    const cur = snap.exists ? (snap.data().balance||0) : 0;
+    tx.set(ref, { balance: cur + amount, updatedAt: FieldValue.serverTimestamp() }, { merge:true });
+  });
+  await db.collection('wallets').doc(uid).collection('transactions').add({
+    type:'credit', amount, description, ...meta, createdAt: FieldValue.serverTimestamp()
+  });
+}
+async function debitWallet(uid, amount, description, meta={}){
+  const ref = db.collection('wallets').doc(uid);
+  let ok = false;
+  await db.runTransaction(async tx=>{
+    const snap = await tx.get(ref);
+    const cur = snap.exists ? (snap.data().balance||0) : 0;
+    if(cur < amount) throw new Error('Insufficient wallet balance');
+    tx.set(ref, { balance: cur - amount, updatedAt: FieldValue.serverTimestamp() }, { merge:true });
+    ok = true;
+  });
+  await db.collection('wallets').doc(uid).collection('transactions').add({
+    type:'debit', amount, description, ...meta, createdAt: FieldValue.serverTimestamp()
+  });
+  return ok;
+}
+async function checkAndAwardReferral(passengerId){
+  try{
+    const usnap = await db.collection('users').doc(passengerId).get();
+    if(!usnap.exists) return;
+    const ud = usnap.data();
+    if(!ud.referredBy || !referralSettings.enabled || referralSettings.condition !== 'first_trip') return;
+    const refSnap = await db.collection('referrals')
+      .where('refereeId','==',passengerId).where('status','==','rewarded').limit(1).get();
+    if(!refSnap.empty) return; // already awarded
+    const pendSnap = await db.collection('referrals')
+      .where('refereeId','==',passengerId).where('status','==','pending').limit(1).get();
+    if(pendSnap.empty) return;
+    const refDoc = pendSnap.docs[0];
+    if(referralSettings.autoApprove){
+      await db.collection('referrals').doc(refDoc.id).update({ status:'rewarded', awardedAt: FieldValue.serverTimestamp() });
+      await creditWallet(ud.referredBy, referralSettings.rewardAmount, `Referral reward — ${ud.name} completed first trip`, { referralId: refDoc.id });
+      await notifyUser(ud.referredBy, '🎉 Referral reward received!', `${ud.name} completed their first trip. ₦${referralSettings.rewardAmount} added to your wallet!`);
+    } else {
+      await db.collection('referrals').doc(refDoc.id).update({ status:'pending_approval' });
+      await notifyUser(ADMIN_EMAIL, 'Referral pending approval', `${ud.name} completed first trip. Referral for user ${ud.referredBy}.`);
+    }
+  }catch(e){ console.warn('referral award error', e); }
+}
+
 // ============================== PASSENGER APP ==============================
 let pCurrentTab = 'home';
 let pPickup = null;     // {lat,lng,address}
@@ -1399,14 +1634,22 @@ let pRebookDestination = null; // set by "Book again" on a history item
 function renderPassengerApp(){
   mount('tpl-app-passenger');
   $('p-avatar').textContent = initials(currentUserDoc.name);
+  if(currentUserDoc.photoURL) $('p-avatar').innerHTML = `<img src="${currentUserDoc.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
   pCurrentTab = 'home';
-
+  // Load wallet balance into cache
+  ensureWallet(currentUser.uid).then(bal=>{ currentWalletBalance = bal; });
+  // Ensure referral code exists
+  if(!currentUserDoc.referralCode){
+    const code = generateReferralCode(currentUser.uid);
+    db.collection('users').doc(currentUser.uid).update({ referralCode: code }).catch(()=>{});
+    currentUserDoc.referralCode = code;
+  }
   $('p-bottomnav').addEventListener('click', (e)=>{
     const btn = e.target.closest('button[data-tab]');
     if(!btn) return;
     pSwitchTab(btn.dataset.tab);
   });
-  $('p-open-notifs').addEventListener('click', ()=> pSwitchTab('notifs'));
+  $('p-open-notifs').addEventListener('click', ()=> openNotifsModal());
 
   pRenderHomeTab();
   pListenActiveRide();
@@ -1414,13 +1657,21 @@ function renderPassengerApp(){
 
 function pSwitchTab(tab){
   pCurrentTab = tab;
-  ['home','history','notifs','profile'].forEach(t=>{
-    $('p-screen-'+t).classList.toggle('hidden', t!==tab);
+  ['home','history','wallet','profile'].forEach(t=>{
+    const el = $('p-screen-'+t); if(el) el.classList.toggle('hidden', t!==tab);
   });
   $('p-bottomnav').querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   if(tab==='history') pRenderHistoryTab();
-  if(tab==='notifs') pRenderNotifsTab();
+  if(tab==='wallet') pRenderWalletTab();
   if(tab==='profile') pRenderProfileTab();
+}
+
+function openNotifsModal(){
+  openModal('tpl-p-notifs', (overlay)=>{
+    loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger');
+    const btn = overlay.querySelector('#p-notifs-refresh');
+    if(btn) btn.addEventListener('click', ()=> loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger'));
+  });
 }
 
 function pRenderHomeTab(){
@@ -1562,6 +1813,17 @@ function pSheetForm(sheet){
   });
 
   $('p-request-ride').addEventListener('click', pRequestRide);
+
+  // Show wallet balance hint when wallet method selected
+  $('p-pay-method').addEventListener('change', (e)=>{
+    const hint = $('p-wallet-hint');
+    if(!hint) return;
+    if(e.target.value === 'wallet'){
+      hint.textContent = `Wallet balance: ${fmtNaira(currentWalletBalance)}`;
+    } else {
+      hint.textContent = '';
+    }
+  });
   loadRecentDestinations();
 
   // "Book again" from history prefills these and jumps straight to the form.
@@ -1617,19 +1879,70 @@ function pUpdateFare(){
   if(!pickupOk){ warnEl.textContent = `Your pickup point looks outside ${serviceArea.name}. Zrider only operates within this area.`; $('p-fare-card').classList.add('hidden'); return; }
   if(!destOk){ warnEl.textContent = `Destination must be within ${serviceArea.name}. Zrider doesn't operate outside this zone yet.`; $('p-fare-card').classList.add('hidden'); return; }
 
-  const distKm = (pPickup.lat != null && pDestination.lat != null)
-    ? haversineKm(pPickup.lat, pPickup.lng, pDestination.lat, pDestination.lng)
-    : 3.5; // reasonable default estimate when exact coordinates aren't available for one or both points
+  if(pPickup.lat != null && pDestination.lat != null){
+    const distKm = haversineKm(pPickup.lat, pPickup.lng, pDestination.lat, pDestination.lng);
+    applyFareBreakdown(distKm);
+  } else {
+    // Both points lack exact coordinates — geocode using Nominatim (free, no API key)
+    $('p-fare-card').classList.remove('hidden');
+    $('p-fare-amount').textContent = '…';
+    $('p-fare-distance').textContent = 'Calculating…';
+    geocodeAddresses(pPickup.address, pDestination.address).then(({distKm, pLat, pLng, dLat, dLng})=>{
+      if(pLat) pPickup.lat = pLat, pPickup.lng = pLng;
+      if(dLat) pDestination.lat = dLat, pDestination.lng = dLng;
+      applyFareBreakdown(distKm);
+    }).catch(()=>{
+      // Last resort: estimate from area keyword positions (still better than hardcoded 3.5)
+      const distKm = estimateDistFromAddresses(pPickup.address, pDestination.address);
+      applyFareBreakdown(distKm);
+    });
+  }
+}
+
+function applyFareBreakdown(distKm){
   const breakdown = computeFareBreakdown(distKm);
-  $('p-fare-distance').textContent = fmtKm(distKm);
-  $('p-fare-time').textContent = '~' + breakdown.estMinutes + ' min';
-  $('p-fare-base').textContent = fmtNaira(breakdown.base);
-  $('p-fare-distcharge').textContent = fmtNaira(breakdown.distCharge);
-  $('p-fare-timecharge').textContent = fmtNaira(breakdown.timeCharge);
-  $('p-fare-amount').textContent = fmtNaira(breakdown.total);
-  $('p-fare-card').classList.remove('hidden');
-  $('p-fare-card').dataset.distKm = distKm;
-  $('p-fare-card').dataset.fare = breakdown.total;
+  const dc = $('p-fare-distance'); if(dc) dc.textContent = fmtKm(distKm);
+  const tc = $('p-fare-time'); if(tc) tc.textContent = '~' + breakdown.estMinutes + ' min';
+  const bc = $('p-fare-base'); if(bc) bc.textContent = fmtNaira(breakdown.base);
+  const dcc = $('p-fare-distcharge'); if(dcc) dcc.textContent = fmtNaira(breakdown.distCharge);
+  const tcc = $('p-fare-timecharge'); if(tcc) tcc.textContent = fmtNaira(breakdown.timeCharge);
+  const ac = $('p-fare-amount'); if(ac) ac.textContent = fmtNaira(breakdown.total);
+  const card = $('p-fare-card'); if(card){ card.classList.remove('hidden'); card.dataset.distKm = distKm; card.dataset.fare = breakdown.total; }
+}
+
+// Geocode two addresses via Nominatim and return distance + coordinates
+async function geocodeAddresses(pickupAddr, destAddr){
+  const geocode = async (addr)=>{
+    const q = encodeURIComponent(addr + ', Lagos, Nigeria');
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, { headers:{'Accept-Language':'en'} });
+    const data = await res.json();
+    if(data && data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    return null;
+  };
+  const [p, d] = await Promise.all([geocode(pickupAddr), geocode(destAddr)]);
+  if(p && d){
+    return { distKm: haversineKm(p.lat, p.lng, d.lat, d.lng), pLat:p.lat, pLng:p.lng, dLat:d.lat, dLng:d.lng };
+  }
+  return { distKm: estimateDistFromAddresses(pickupAddr, destAddr) };
+}
+
+// Rough estimate based on area positions within Ikeja/Kosofe when geocoding fails
+const AREA_POSITIONS = {
+  'ikeja':{lat:6.6018,lng:3.3515}, 'opebi':{lat:6.5978,lng:3.3581}, 'allen':{lat:6.5975,lng:3.3546},
+  'oregun':{lat:6.6089,lng:3.3706}, 'agidingbi':{lat:6.6060,lng:3.3620}, 'alausa':{lat:6.6241,lng:3.3497},
+  'ketu':{lat:6.5924,lng:3.3933}, 'gbagada':{lat:6.5550,lng:3.3831}, 'magodo':{lat:6.6169,lng:3.3992},
+  'ojota':{lat:6.5925,lng:3.3831}, 'maryland':{lat:6.5620,lng:3.3530}, 'palmgrove':{lat:6.5620,lng:3.3533},
+  'bariga':{lat:6.5350,lng:3.3880}, 'oworonshoki':{lat:6.5395,lng:3.3817}, 'anthony':{lat:6.5645,lng:3.3643}
+};
+function estimateDistFromAddresses(addr1, addr2){
+  const find = (addr)=>{
+    const a = addr.toLowerCase();
+    for(const [k,v] of Object.entries(AREA_POSITIONS)){ if(a.includes(k)) return v; }
+    return null;
+  };
+  const p = find(addr1), d = find(addr2);
+  if(p && d) return Math.max(0.5, haversineKm(p.lat, p.lng, d.lat, d.lng));
+  return 2.5; // last-resort default if both addresses are unrecognized
 }
 
 async function pRequestRide(){
@@ -1640,6 +1953,21 @@ async function pRequestRide(){
   const paymentMethod = $('p-pay-method').value;
 
   try{
+    // Wallet payment: check balance first
+    if(paymentMethod === 'wallet'){
+      const bal = await getWalletBalance(currentUser.uid);
+      currentWalletBalance = bal;
+      if(bal < fare){
+        toast(`Insufficient wallet balance. You have ${fmtNaira(bal)}, need ${fmtNaira(fare)}.`, 'err');
+        btn.disabled = false; btn.textContent = 'Request bike';
+        openDepositModal();
+        return;
+      }
+      // Debit wallet immediately
+      await debitWallet(currentUser.uid, fare, `Ride payment — ${pPickup.address} → ${pDestination.address}`, { method:'wallet' });
+      currentWalletBalance = bal - fare;
+    }
+
     const rideRef = await db.collection('rides').add({
       passengerId: currentUser.uid,
       passengerName: currentUserDoc.name,
@@ -1650,7 +1978,7 @@ async function pRequestRide(){
       distanceKm: distKm,
       fare: fare,
       paymentMethod,
-      paymentStatus: paymentMethod === 'cash' ? 'pending_cash' : 'pending_online',
+      paymentStatus: paymentMethod === 'cash' ? 'pending_cash' : paymentMethod === 'wallet' ? 'paid_wallet' : 'pending_online',
       status: 'searching',
       passengerActive: true,
       riderActive: false,
@@ -1662,7 +1990,7 @@ async function pRequestRide(){
       const ok = await collectPaystackPayment(fare, async (ref)=>{
         await db.collection('rides').doc(rideRef.id).update({ paymentStatus:'paid_online', paystackRef: ref });
       });
-      if(!ok){ /* payment failed/cancelled — ride still created, passenger can pay cash on arrival or retry later */ }
+      if(!ok){ /* payment failed/cancelled */ }
     }
     toast('Looking for a nearby rider…', 'ok');
   }catch(e){
@@ -1820,10 +2148,160 @@ async function pRenderHistoryTab(){
 // ---- Passenger: Notifications tab ----
 async function pRenderNotifsTab(){
   const c = $('p-screen-notifs');
+  if(c){ c.innerHTML = ''; c.appendChild(clone('tpl-p-notifs')); loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger'); }
+}
+
+// ---- Passenger: Wallet tab ----
+async function pRenderWalletTab(){
+  const c = $('p-screen-wallet');
   c.innerHTML = '';
-  c.appendChild(clone('tpl-p-notifs'));
-  $('p-notifs-refresh').addEventListener('click', ()=> loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger'));
-  loadNotificationsInto('p-notifs-list', currentUser.uid, 'passenger');
+  c.appendChild(clone('tpl-p-wallet'));
+  // Load balance
+  const bal = await getWalletBalance(currentUser.uid);
+  currentWalletBalance = bal;
+  $('pw-balance').textContent = fmtNaira(bal);
+  // Referral code
+  const code = currentUserDoc.referralCode || generateReferralCode(currentUser.uid);
+  $('pw-refcode').textContent = code;
+  $('pw-copy-code').addEventListener('click', ()=>{ navigator.clipboard.writeText(code).catch(()=>{}); toast('Referral code copied!','ok'); });
+  // Referral stats
+  const refSnap = await db.collection('referrals').where('referrerId','==',currentUser.uid).get();
+  const refs = refSnap.docs.map(d=>d.data());
+  $('pw-ref-count').textContent = refs.length;
+  const earned = refs.filter(r=>r.status==='rewarded').reduce((s,r)=>s+(r.reward||0),0);
+  $('pw-ref-earnings').textContent = fmtNaira(earned);
+  // Buttons
+  $('pw-fund-btn').addEventListener('click', openDepositModal);
+  $('pw-refer-btn').addEventListener('click', ()=> openReferralModal());
+  // Transactions
+  loadWalletTransactions($('pw-tx-list'), currentUser.uid);
+}
+
+async function loadWalletTransactions(container, uid){
+  container.innerHTML = '<div class="skel" style="height:50px;margin-bottom:8px;"></div><div class="skel" style="height:50px;"></div>';
+  try{
+    const snap = await db.collection('wallets').doc(uid).collection('transactions')
+      .orderBy('createdAt','desc').limit(30).get();
+    if(snap.empty){ container.innerHTML = '<div class="empty-state"><p>No transactions yet</p></div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d=>{
+      const tx = d.data();
+      const isCredit = tx.type === 'credit';
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.style.marginBottom = '8px';
+      el.innerHTML = `<div class="row">
+        <div style="flex:1;"><strong style="font-size:13px;">${tx.description||tx.type}</strong><p class="muted" style="font-size:11px;margin-top:2px;">${timeAgo(tx.createdAt)}</p></div>
+        <span class="meter" style="font-size:16px;color:${isCredit?'var(--amber-500)':'var(--red-600)'}">${isCredit?'+':'-'}${fmtNaira(tx.amount)}</span>
+      </div>`;
+      container.appendChild(el);
+    });
+  }catch(e){ container.innerHTML = '<div class="empty-state"><p>Could not load transactions.</p></div>'; }
+}
+
+function openDepositModal(){
+  openModal('tpl-deposit-method', (overlay)=>{
+    overlay.querySelector('#dep-paystack-btn').addEventListener('click', ()=>{
+      closeModal();
+      openPaystackDeposit();
+    });
+    overlay.querySelector('#dep-bank-btn').addEventListener('click', ()=>{
+      closeModal();
+      openBankDepositModal();
+    });
+  });
+}
+
+function openPaystackDeposit(){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'zr-overlay';
+  overlay.innerHTML = `<div class="modal"><div class="modal-head"><h3>Fund wallet via Paystack</h3></div>
+    <div class="field"><label>Amount to add (₦)</label><input type="number" id="ps-deposit-amount" placeholder="e.g. 2000" min="100"></div>
+    <button class="btn btn-primary" id="ps-deposit-submit">Proceed to payment</button>
+    <button class="modal-close" data-close style="display:block;margin-top:10px;width:100%;background:none;border:none;color:var(--ink-400);cursor:pointer;">Cancel</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal));
+  overlay.querySelector('#ps-deposit-submit').addEventListener('click', async ()=>{
+    const amount = parseFloat(overlay.querySelector('#ps-deposit-amount').value);
+    if(!amount || amount < 100){ toast('Enter at least ₦100','err'); return; }
+    closeModal();
+    const ok = await collectPaystackPayment(amount, async (ref)=>{
+      await creditWallet(currentUser.uid, amount, `Paystack deposit — ${fmtNaira(amount)}`, { paystackRef: ref, method:'paystack' });
+      await db.collection('deposits').add({
+        uid: currentUser.uid, userName: currentUserDoc.name, amount,
+        method:'paystack', status:'approved', paystackRef: ref, createdAt: FieldValue.serverTimestamp()
+      });
+      currentWalletBalance += amount;
+      toast(`₦${amount.toLocaleString()} added to your wallet!`, 'ok');
+      pSwitchTab('wallet');
+    });
+    if(!ok) toast('Payment cancelled.','');
+  });
+}
+
+function openBankDepositModal(){
+  openModal('tpl-deposit-bank', (overlay)=>{
+    overlay.querySelector('#dep-copy-acct').addEventListener('click', ()=>{
+      navigator.clipboard.writeText(BANK_ACCOUNT.number).catch(()=>{});
+      toast('Account number copied!','ok');
+    });
+    overlay.querySelector('#dep-submit-bank').addEventListener('click', async ()=>{
+      const amount = parseFloat(overlay.querySelector('#dep-amount').value);
+      const ref = overlay.querySelector('#dep-ref').value.trim();
+      const receiptFile = overlay.querySelector('#dep-receipt').files[0];
+      const errEl = overlay.querySelector('#dep-error');
+      if(!amount || amount < 100){ errEl.textContent = 'Enter a valid amount (min ₦100).'; return; }
+      const btn = overlay.querySelector('#dep-submit-bank');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Submitting…';
+      try{
+        let receiptDataUrl = '';
+        if(receiptFile) receiptDataUrl = await fileToCompressedDataURL(receiptFile, 1200, 0.65);
+        await db.collection('deposits').add({
+          uid: currentUser.uid, userName: currentUserDoc.name,
+          amount, ref, receiptDataUrl, method:'bank_transfer',
+          status:'pending', createdAt: FieldValue.serverTimestamp()
+        });
+        toast('Deposit request submitted! Admin will verify shortly.','ok');
+        closeModal();
+      }catch(e){ errEl.textContent = 'Submission failed. Try again.'; btn.disabled=false; btn.textContent='Submit deposit request'; }
+    });
+  });
+}
+
+function openReferralModal(){
+  openModal('tpl-referral-modal', async (overlay)=>{
+    const code = currentUserDoc.referralCode || generateReferralCode(currentUser.uid);
+    overlay.querySelector('#ref-modal-code').textContent = code;
+    overlay.querySelector('#ref-reward-desc').textContent =
+      referralSettings.enabled
+        ? `Share your code. When a friend ${referralSettings.condition==='first_trip'?'completes their first trip':'signs up'}, you earn ₦${referralSettings.rewardAmount}.`
+        : 'The referral program is currently paused.';
+    const refLink = `${location.origin}${location.pathname}?ref=${code}`;
+    overlay.querySelector('#ref-share-btn').addEventListener('click', ()=>{
+      if(navigator.share){ navigator.share({ title:'Join Zrider', text:`Use my code ${code} on Zrider for a ride in Ikeja & Kosofe, Lagos!`, url: refLink }); }
+      else{ navigator.clipboard.writeText(refLink).catch(()=>{}); toast('Referral link copied!','ok'); }
+    });
+    overlay.querySelector('#ref-copy-btn').addEventListener('click', ()=>{ navigator.clipboard.writeText(code).catch(()=>{}); toast('Code copied!','ok'); });
+    // Load referral list
+    const list = overlay.querySelector('#ref-list');
+    list.innerHTML = '<div class="skel" style="height:40px;"></div>';
+    const snap = await db.collection('referrals').where('referrerId','==',currentUser.uid).orderBy('createdAt','desc').get();
+    if(snap.empty){ list.innerHTML = '<p class="muted" style="font-size:13px;">No referrals yet. Share your code to start earning!</p>'; return; }
+    list.innerHTML = '';
+    snap.forEach(d=>{
+      const r = d.data();
+      const pillCls = r.status==='rewarded'?'pill-green':r.status==='pending_approval'?'pill-amber':'pill-grey';
+      const el = document.createElement('div'); el.className='list-item';
+      el.innerHTML = `<div class="avatar" style="background:var(--surface-2);">${initials(r.refereeName)}</div>
+        <div style="flex:1;"><strong style="font-size:13px;">${r.refereeName}</strong><p class="muted" style="font-size:11px;">${timeAgo(r.createdAt)}</p></div>
+        <div style="text-align:right;"><span class="pill ${pillCls}">${r.status.replace('_',' ')}</span>
+        ${r.status==='rewarded'?`<p class="muted" style="font-size:11px;margin-top:3px;">+${fmtNaira(r.reward)}</p>`:''}
+        </div>`;
+      list.appendChild(el);
+    });
+  });
 }
 
 // ---- Passenger: Profile tab ----
@@ -2279,7 +2757,11 @@ async function riderCompleteTrip(ride){
     todayEarnings: FieldValue.increment(earning),
     todayTrips: FieldValue.increment(1)
   });
+  // Also credit rider's main wallet
+  await creditWallet(currentUser.uid, earning, `Trip earnings — ${fmtNaira(ride.fare)} fare`, { rideId: ride.id, method:'trip_earning' });
   riderDoc.walletBalance = (riderDoc.walletBalance||0) + earning;
+  // Check if passenger gets referral reward for first trip
+  checkAndAwardReferral(ride.passengerId);
   toast(`Trip completed! You earned ${fmtNaira(earning)}`, 'ok');
   promptRating('Rate this passenger', async (rating)=>{
     await db.collection('rides').doc(ride.id).update({ passengerRatingByRider: rating });
@@ -2417,16 +2899,17 @@ function renderAdminApp(){
 
 function aSwitchTab(tab){
   aCurrentTab = tab;
-  ['overview','riders','passengers','trips','pricing','area','withdrawals','complaints','broadcast'].forEach(t=>{
-    $('a-screen-'+t).classList.toggle('hidden', t!==tab);
+  ['overview','riders','passengers','trips','pricing','area','wallet','referrals','withdrawals','complaints','broadcast'].forEach(t=>{
+    const el = $('a-screen-'+t); if(el) el.classList.toggle('hidden', t!==tab);
   });
   $('a-tabs').querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   const renderers = {
     overview: aRenderOverview, riders: aRenderRiders, passengers: aRenderPassengers,
     trips: aRenderTrips, pricing: aRenderPricing, area: aRenderArea,
+    wallet: aRenderWallet, referrals: aRenderReferrals,
     withdrawals: aRenderWithdrawals, complaints: aRenderComplaints, broadcast: aRenderBroadcast
   };
-  renderers[tab]();
+  if(renderers[tab]) renderers[tab]();
 }
 
 // ---- Overview ----
@@ -2797,6 +3280,160 @@ function aRenderBroadcast(){
     toast('Notification sent.', 'ok');
     $('a-broadcast-title').value=''; $('a-broadcast-message').value='';
   });
+}
+
+// ---- Admin: Wallet Management ----
+let aWalletFilter = 'deposits';
+function aRenderWallet(){
+  const c = $('a-screen-wallet'); c.innerHTML = '';
+  c.appendChild(clone('tpl-a-wallet'));
+  $('a-wallet-filter').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-wf]'); if(!btn) return;
+    $('a-wallet-filter').querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); aWalletFilter = btn.dataset.wf;
+    aLoadWalletContent();
+  });
+  aWalletFilter = 'deposits';
+  aLoadWalletContent();
+}
+async function aLoadWalletContent(){
+  const box = $('a-wallet-content');
+  box.innerHTML = '<div class="skel" style="height:70px;margin-top:14px;"></div>';
+  if(aWalletFilter === 'deposits') await aLoadDeposits(box);
+  else if(aWalletFilter === 'transactions') await aLoadAllTransactions(box);
+  else if(aWalletFilter === 'manual-credit') aRenderManualCredit(box);
+}
+async function aLoadDeposits(box){
+  const snap = await db.collection('deposits').orderBy('createdAt','desc').get();
+  if(snap.empty){ box.innerHTML='<div class="empty-state"><p>No deposit requests yet.</p></div>'; return; }
+  box.innerHTML='';
+  snap.forEach(d=>{
+    const dep = Object.assign({id:d.id}, d.data());
+    const pillCls = dep.status==='approved'?'pill-green':dep.status==='rejected'?'pill-red':'pill-amber';
+    const el = document.createElement('div'); el.className='card'; el.style.marginBottom='10px';
+    el.innerHTML=`<div class="row"><strong>${dep.userName||'User'}</strong><span class="pill ${pillCls}">${dep.status.toUpperCase()}</span></div>
+      <div class="row" style="margin-top:6px;"><span class="muted">Amount</span><span class="meter" style="color:var(--amber-500);">${fmtNaira(dep.amount)}</span></div>
+      <div class="row" style="margin-top:4px;font-size:12px;"><span class="muted">Method</span><span>${dep.method==='paystack'?'⚡ Paystack':'🏦 Bank transfer'}</span></div>
+      ${dep.ref?`<div class="row" style="margin-top:4px;font-size:12px;"><span class="muted">Ref</span><span>${dep.ref}</span></div>`:''}
+      ${dep.receiptDataUrl?`<img src="${dep.receiptDataUrl}" style="width:100%;border-radius:8px;margin-top:8px;max-height:160px;object-fit:cover;" onclick="this.style.maxHeight=this.style.maxHeight?'':'160px'">`:'' }
+      <p class="muted" style="font-size:11px;margin-top:6px;">${timeAgo(dep.createdAt)}</p>
+      <div class="btn-block-row" style="margin-top:10px;" data-actions></div>`;
+    if(dep.status === 'pending'){
+      const approveBtn = document.createElement('button'); approveBtn.className='btn btn-primary btn-sm'; approveBtn.textContent='Approve';
+      approveBtn.addEventListener('click', async ()=>{
+        await db.collection('deposits').doc(dep.id).update({ status:'approved', approvedAt: FieldValue.serverTimestamp() });
+        await creditWallet(dep.uid, dep.amount, `Bank deposit approved — ${fmtNaira(dep.amount)}`, { depositId:dep.id, method:'bank_transfer' });
+        await notifyUser(dep.uid, '✅ Deposit approved', `Your deposit of ${fmtNaira(dep.amount)} has been credited to your wallet.`);
+        toast('Deposit approved and wallet credited.','ok');
+        aLoadWalletContent();
+      });
+      const rejectBtn = document.createElement('button'); rejectBtn.className='btn btn-outline btn-sm'; rejectBtn.style.color='var(--red-600)'; rejectBtn.style.borderColor='var(--red-600)'; rejectBtn.textContent='Reject';
+      rejectBtn.addEventListener('click', async ()=>{
+        const reason = prompt('Reason for rejection:') || 'Could not verify payment.';
+        await db.collection('deposits').doc(dep.id).update({ status:'rejected', rejectionReason:reason });
+        await notifyUser(dep.uid,'❌ Deposit not approved',`Your deposit of ${fmtNaira(dep.amount)} was not approved. Reason: ${reason}`);
+        toast('Deposit rejected.'); aLoadWalletContent();
+      });
+      el.querySelector('[data-actions]').append(approveBtn, rejectBtn);
+    }
+    box.appendChild(el);
+  });
+}
+async function aLoadAllTransactions(box){
+  const usersSnap = await db.collection('users').limit(50).get();
+  box.innerHTML = '';
+  let allTx = [];
+  for(const ud of usersSnap.docs){
+    const txSnap = await db.collection('wallets').doc(ud.id).collection('transactions').orderBy('createdAt','desc').limit(10).get();
+    txSnap.forEach(d=>{ allTx.push(Object.assign({id:d.id, userName:ud.data().name, uid:ud.id}, d.data())); });
+  }
+  allTx.sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+  if(!allTx.length){ box.innerHTML='<div class="empty-state"><p>No transactions yet.</p></div>'; return; }
+  allTx.slice(0,60).forEach(tx=>{
+    const el = document.createElement('div'); el.className='card'; el.style.marginBottom='8px';
+    const isCredit = tx.type==='credit';
+    el.innerHTML=`<div class="row"><div><strong style="font-size:13px;">${tx.userName}</strong><p class="muted" style="font-size:11px;">${tx.description}</p></div>
+      <span class="meter" style="color:${isCredit?'var(--amber-500)':'var(--red-600)'}">${isCredit?'+':'-'}${fmtNaira(tx.amount)}</span></div>
+      <p class="muted" style="font-size:11px;margin-top:4px;">${timeAgo(tx.createdAt)}</p>`;
+    box.appendChild(el);
+  });
+}
+function aRenderManualCredit(box){
+  box.innerHTML=`<div class="card" style="margin-top:14px;">
+    <div class="zr-eyebrow">MANUAL WALLET ADJUSTMENT</div>
+    <div class="field" style="margin-top:12px;"><label>User email or UID</label><input type="text" id="mc-user" placeholder="Email address"></div>
+    <div class="field"><label>Amount (₦)</label><input type="number" id="mc-amount" placeholder="e.g. 1000"></div>
+    <div class="field"><label>Type</label><select id="mc-type"><option value="credit">Credit (add money)</option><option value="debit">Debit (remove money)</option></select></div>
+    <div class="field"><label>Description</label><input type="text" id="mc-desc" placeholder="Reason for adjustment"></div>
+    <button class="btn btn-primary" id="mc-submit">Apply adjustment</button>
+    <p id="mc-msg" style="margin-top:8px;font-size:12px;"></p></div>`;
+  box.querySelector('#mc-submit').addEventListener('click', async ()=>{
+    const emailOrId = box.querySelector('#mc-user').value.trim();
+    const amount = parseFloat(box.querySelector('#mc-amount').value);
+    const type = box.querySelector('#mc-type').value;
+    const desc = box.querySelector('#mc-desc').value.trim() || 'Admin adjustment';
+    const msg = box.querySelector('#mc-msg');
+    if(!emailOrId || !amount || amount<=0){ msg.textContent='Fill all fields.'; return; }
+    let uid = emailOrId;
+    if(emailOrId.includes('@')){
+      const uSnap = await db.collection('users').where('email','==',emailOrId).limit(1).get();
+      if(uSnap.empty){ msg.textContent='User not found.'; return; }
+      uid = uSnap.docs[0].id;
+    }
+    try{
+      if(type==='credit') await creditWallet(uid, amount, desc, { byAdmin:true });
+      else await debitWallet(uid, amount, desc, { byAdmin:true });
+      await notifyUser(uid, type==='credit'?'💰 Wallet credited':'Wallet adjusted', `${type==='credit'?fmtNaira(amount)+' has been added to':''+fmtNaira(amount)+' has been removed from'} your wallet by admin. Reason: ${desc}`);
+      msg.style.color='var(--amber-500)'; msg.textContent=`${type==='credit'?'Credited':'Debited'} ${fmtNaira(amount)} successfully.`;
+    }catch(e){ msg.style.color='var(--red-600)'; msg.textContent=e.message||'Failed.'; }
+  });
+}
+
+// ---- Admin: Referral Management ----
+async function aRenderReferrals(){
+  const c = $('a-screen-referrals'); c.innerHTML = '';
+  c.appendChild(clone('tpl-a-referrals'));
+  $('a-ref-enabled').value = String(referralSettings.enabled);
+  $('a-ref-reward').value = referralSettings.rewardAmount;
+  $('a-ref-condition').value = referralSettings.condition;
+  $('a-ref-auto').value = String(referralSettings.autoApprove);
+  $('a-save-ref-settings').addEventListener('click', async ()=>{
+    const updated = {
+      enabled: $('a-ref-enabled').value === 'true',
+      rewardAmount: parseFloat($('a-ref-reward').value)||500,
+      condition: $('a-ref-condition').value,
+      autoApprove: $('a-ref-auto').value === 'true'
+    };
+    await db.collection('settings').doc('referral').set(updated);
+    Object.assign(referralSettings, updated);
+    toast('Referral settings saved.','ok');
+  });
+  const list = $('a-ref-list');
+  list.innerHTML='<div class="skel" style="height:60px;"></div>';
+  try{
+    const snap = await db.collection('referrals').orderBy('createdAt','desc').get();
+    if(snap.empty){ list.innerHTML='<div class="empty-state"><p>No referrals yet.</p></div>'; return; }
+    list.innerHTML='';
+    snap.forEach(d=>{
+      const r = Object.assign({id:d.id},d.data());
+      const pillCls = r.status==='rewarded'?'pill-green':r.status==='pending_approval'?'pill-amber':'pill-grey';
+      const el = document.createElement('div'); el.className='card'; el.style.marginBottom='8px';
+      el.innerHTML=`<div class="row"><strong>${r.refereeName}</strong><span class="pill ${pillCls}">${r.status.replace('_',' ')}</span></div>
+        <p class="muted" style="font-size:12px;margin-top:4px;">Reward: ${fmtNaira(r.reward||0)} · ${timeAgo(r.createdAt)}</p>
+        <div data-actions></div>`;
+      if(r.status==='pending_approval'){
+        const approveBtn = document.createElement('button'); approveBtn.className='btn btn-primary btn-sm'; approveBtn.style.marginTop='8px'; approveBtn.textContent='Approve reward';
+        approveBtn.addEventListener('click', async ()=>{
+          await db.collection('referrals').doc(r.id).update({ status:'rewarded', awardedAt: FieldValue.serverTimestamp() });
+          await creditWallet(r.referrerId, r.reward||referralSettings.rewardAmount, `Referral reward — ${r.refereeName}`, { referralId:r.id });
+          await notifyUser(r.referrerId,'🎉 Referral reward approved!',`Your referral reward of ${fmtNaira(r.reward||referralSettings.rewardAmount)} has been credited.`);
+          toast('Reward approved and credited.','ok'); aRenderReferrals();
+        });
+        el.querySelector('[data-actions]').appendChild(approveBtn);
+      }
+      list.appendChild(el);
+    });
+  }catch(e){ list.innerHTML='<div class="empty-state"><p>Could not load referrals.</p></div>'; }
 }
 </script>
 </body>
