@@ -6,8 +6,13 @@
 <title>Zrider — Bike Rides in Ikeja & Kosofe</title>
 <meta name="description" content="Zrider: fast, affordable motorcycle rides across Ikeja and Kosofe LGA, Lagos.">
 <meta name="theme-color" content="#000000">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23000'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23000'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Zrider">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B6E4F'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-weight='800' font-size='58' fill='%23FFB100' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -999,6 +1004,68 @@ let activeChatRideId = null;
 const root = document.getElementById('zr-root');
 
 // ---------- Connectivity banner ----------
+// ---------- Service Worker + PWA Install ----------
+let deferredInstallPrompt = null;
+
+function setupPWA(){
+  // Register service worker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => {
+        // Check for updates in background
+        reg.addEventListener('updatefound', ()=>{
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', ()=>{
+            if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+              toast('Zrider updated — refresh to get the latest.','ok');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('SW registration failed:', err));
+  }
+
+  // Capture the install prompt for the banner
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+  });
+
+  window.addEventListener('appinstalled', ()=>{
+    deferredInstallPrompt = null;
+    const b = document.getElementById('zr-install-banner');
+    if(b) b.remove();
+    toast('Zrider installed! Find it on your home screen.','ok');
+  });
+}
+
+function showInstallBanner(){
+  if(document.getElementById('zr-install-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'zr-install-banner';
+  banner.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;z-index:150;background:#1a1a1a;border:1px solid var(--amber-500);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);max-width:456px;margin:0 auto;';
+  banner.innerHTML = `
+    <img src="icons/icon-72.png" style="width:36px;height:36px;border-radius:8px;" alt="">
+    <div style="flex:1;">
+      <p style="font-weight:700;font-size:13px;color:#fff;margin:0;">Add Zrider to home screen</p>
+      <p style="font-size:11px;color:rgba(255,255,255,.6);margin:2px 0 0;">Faster launch, works offline</p>
+    </div>
+    <button id="zr-install-yes" style="background:var(--amber-500);color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;">Install</button>
+    <button id="zr-install-no" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;flex-shrink:0;">✕</button>`;
+  document.body.appendChild(banner);
+  banner.querySelector('#zr-install-yes').addEventListener('click', async ()=>{
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    banner.remove();
+  });
+  banner.querySelector('#zr-install-no').addEventListener('click', ()=> banner.remove());
+}
+
+setupPWA();
+
 function setupConnectivityBanner(){
   const banner = document.createElement('div');
   banner.id = 'zr-offline-banner';
@@ -2280,8 +2347,10 @@ function openReferralModal(){
         : 'The referral program is currently paused.';
     const refLink = `${location.origin}${location.pathname}?ref=${code}`;
     overlay.querySelector('#ref-share-btn').addEventListener('click', ()=>{
-      if(navigator.share){ navigator.share({ title:'Join Zrider', text:`Use my code ${code} on Zrider for a ride in Ikeja & Kosofe, Lagos!`, url: refLink }); }
-      else{ navigator.clipboard.writeText(refLink).catch(()=>{}); toast('Referral link copied!','ok'); }
+      const rewardAmt = referralSettings.rewardAmount || 500;
+      const shareText = `🏍️ Ride fast, ride cheap with Zrider!\n\nI use Zrider for quick & affordable okada rides across Ikeja & Kosofe, Lagos.\n\n🎁 Use my referral code *${code}* when you sign up. Once you complete your first ride, I earn ₦${rewardAmt.toLocaleString()} — and you get a better ride experience!\n\nSign up here 👇\n${refLink}`;
+      if(navigator.share){ navigator.share({ title:'Join Zrider — Fast Bike Rides in Lagos', text: shareText, url: refLink }).catch(()=>{}); }
+      else{ navigator.clipboard.writeText(shareText).catch(()=>{}); toast('Message copied — paste it on WhatsApp or anywhere!','ok'); }
     });
     overlay.querySelector('#ref-copy-btn').addEventListener('click', ()=>{ navigator.clipboard.writeText(code).catch(()=>{}); toast('Code copied!','ok'); });
     // Load referral list
