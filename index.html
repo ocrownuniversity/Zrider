@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>Zrider — Bike Rides in Ikeja & Kosofe</title>
-<meta name="description" content="Zrider: fast, affordable motorcycle rides across Ikeja and Kosofe LGA, Lagos.">
+<title>Zrider — Bike Rides Across Lagos & Ogun States</title>
+<meta name="description" content="Zrider: fast, affordable motorcycle rides across every Local Government Area in Lagos State and Ogun State, Nigeria.">
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -36,14 +36,15 @@
   --radius-s:10px; --radius-m:16px; --radius-l:24px;
   --shadow-card:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.5);
   --shadow-pop:0 12px 40px rgba(0,0,0,.7);
-  --font-display:'Sora',system-ui,sans-serif; --font-body:'Inter',system-ui,sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --font-display:'Plus Jakarta Sans',system-ui,sans-serif; --font-body:'Inter',system-ui,sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --fs-base:17px; --fs-h1:32px; --fs-h2:24px; --fs-h3:19px; --fs-body:16px; --fs-label:14px; --fs-small:14px;
   /* accent colours kept for interactive elements */
   --accent:#FFB100;
   --accent-dim:#2a2200;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;height:100%;background:#000;}
-body{font-family:var(--font-body);color:var(--ink-900);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;}
+body{font-family:var(--font-body);font-size:var(--fs-base);line-height:1.5;color:var(--ink-900);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 button{font-family:inherit;} input,select,textarea{font-family:inherit;color:var(--ink-900);background:var(--surface-2);border-color:var(--surface-2);}
 ::selection{background:var(--amber-100);} a{color:inherit;}
 .hidden{display:none !important;} .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -54,33 +55,34 @@ button{font-family:inherit;} input,select,textarea{font-family:inherit;color:var
 .route-stripe{height:4px;width:100%;background:repeating-linear-gradient(90deg, var(--amber-500) 0 14px, transparent 14px 24px);border-radius:2px;}
 .route-stripe.vert{width:4px;height:100%;background:repeating-linear-gradient(180deg, var(--amber-500) 0 14px, transparent 14px 24px);}
 
-h1,h2,h3,.zr-display{font-family:var(--font-display);font-weight:700;color:var(--ink-900);margin:0;letter-spacing:-.01em;}
-.zr-eyebrow{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-500);font-weight:700;}
-p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
+h1,h2,h3,.zr-display{font-family:var(--font-display);font-weight:700;color:var(--ink-900);margin:0;letter-spacing:-.01em;line-height:1.2;}
+h1{font-size:var(--fs-h1);} h2{font-size:var(--fs-h2);} h3{font-size:var(--fs-h3);}
+.zr-eyebrow{font-family:var(--font-mono);font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-500);font-weight:700;}
+p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-400);font-size:var(--fs-small);}
 .meter{font-family:var(--font-mono);font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums;}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:var(--radius-s);font-family:var(--font-body);font-weight:600;font-size:15px;padding:14px 18px;cursor:pointer;transition:transform .12s ease, opacity .15s ease;width:100%;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:var(--radius-s);font-family:var(--font-body);font-weight:600;font-size:16px;padding:15px 18px;cursor:pointer;transition:transform .12s ease, opacity .15s ease;width:100%;}
 .btn:active{transform:scale(.97);}
 .btn-primary{background:var(--amber-500);color:#000;} .btn-primary:hover{background:var(--amber-600);}
 .btn-amber{background:var(--amber-500);color:#000;} .btn-amber:hover{background:var(--amber-600);}
 .btn-outline{background:transparent;color:var(--amber-500);border:1.5px solid var(--amber-500);}
 .btn-ghost{background:transparent;color:var(--ink-700);}
 .btn-danger{background:var(--red-600);color:#fff;}
-.btn-sm{padding:9px 14px;font-size:13px;width:auto;}
+.btn-sm{padding:10px 14px;font-size:14px;width:auto;}
 .btn-block-row{display:flex;gap:10px;}
 .btn[disabled]{opacity:.4;pointer-events:none;}
 
 .field{margin-bottom:14px;}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--ink-700);margin-bottom:6px;letter-spacing:.01em;}
-.field input, .field select, .field textarea{width:100%;padding:13px 14px;border-radius:var(--radius-s);border:1.5px solid var(--surface-2);background:var(--surface-2);font-size:15px;color:var(--ink-900);outline:none;transition:border-color .15s;}
+.field label{display:block;font-size:var(--fs-label);font-weight:600;color:var(--ink-700);margin-bottom:6px;letter-spacing:.01em;}
+.field input, .field select, .field textarea{width:100%;padding:14px;border-radius:var(--radius-s);border:1.5px solid var(--surface-2);background:var(--surface-2);font-size:16px;color:var(--ink-900);outline:none;transition:border-color .15s;}
 .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--amber-500);}
 .field input::placeholder{color:var(--ink-400);}
-.field .hint{font-size:11px;color:var(--ink-400);margin-top:4px;}
+.field .hint{font-size:13px;color:var(--ink-400);margin-top:4px;}
 
 .card{background:var(--surface-0);border-radius:var(--radius-m);padding:16px;box-shadow:var(--shadow-card);border:1px solid var(--surface-2);}
 .card + .card{margin-top:12px;}
 
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;}
 .pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
 .pill-green{background:rgba(255,177,0,.15);color:var(--amber-500);}
 .pill-amber{background:rgba(255,177,0,.12);color:var(--amber-500);}
@@ -92,7 +94,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 .brand-mark{width:30px;height:30px;border-radius:8px;background:var(--amber-500);display:flex;align-items:center;justify-content:center;color:#000;font-family:var(--font-display);font-weight:800;font-size:15px;}
 
 .bottomnav{position:sticky;bottom:0;z-index:30;display:flex;background:var(--surface-0);border-top:1px solid var(--surface-2);padding:6px 4px calc(6px + env(safe-area-inset-bottom));}
-.bottomnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;padding:8px 2px;color:var(--ink-400);font-size:10.5px;font-weight:600;cursor:pointer;border-radius:10px;}
+.bottomnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;padding:8px 2px;color:var(--ink-400);font-size:12px;font-weight:600;cursor:pointer;border-radius:10px;}
 .bottomnav button.active{color:var(--amber-500);}
 .bottomnav button svg{width:21px;height:21px;}
 
@@ -110,13 +112,13 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 .auth-hero{padding:48px 24px 24px;background:linear-gradient(160deg,#111 0%,#000 60%);}
 .auth-hero .brand-row{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
 .auth-hero .brand-mark{background:var(--amber-500);color:#000;}
-.auth-hero h1{color:#fff;font-size:30px;line-height:1.15;}
-.auth-hero p{color:rgba(255,255,255,.6);margin-top:8px;font-size:14px;}
+.auth-hero h1{color:#fff;font-size:34px;line-height:1.15;}
+.auth-hero p{color:rgba(255,255,255,.6);margin-top:8px;font-size:16px;}
 .auth-card{background:var(--surface-0);border-radius:var(--radius-l) var(--radius-l) 0 0;flex:1;padding:24px;margin-top:20px;border-top:1px solid var(--surface-2);}
 .role-toggle{display:flex;gap:8px;background:var(--surface-2);padding:4px;border-radius:var(--radius-s);margin-bottom:18px;}
-.role-toggle button{flex:1;border:none;background:none;padding:10px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-400);cursor:pointer;}
+.role-toggle button{flex:1;border:none;background:none;padding:10px;border-radius:8px;font-weight:600;font-size:14.5px;color:var(--ink-400);cursor:pointer;}
 .role-toggle button.active{background:var(--amber-500);color:#000;box-shadow:0 2px 8px rgba(255,177,0,.3);}
-.tab-link{text-align:center;font-size:13px;color:var(--ink-400);margin-top:16px;}
+.tab-link{text-align:center;font-size:14.5px;color:var(--ink-400);margin-top:16px;}
 .tab-link b{color:var(--amber-500);cursor:pointer;}
 
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:90;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
@@ -127,7 +129,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 .modal-close{background:var(--surface-2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;color:var(--ink-700);}
 
 #zr-toasts{position:fixed;top:14px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:200;pointer-events:none;}
-.toast{background:var(--surface-2);color:var(--ink-900);font-size:13px;font-weight:500;padding:10px 16px;border-radius:999px;box-shadow:var(--shadow-pop);max-width:88%;text-align:center;border:1px solid var(--surface-2);}
+.toast{background:var(--surface-2);color:var(--ink-900);font-size:14.5px;font-weight:500;padding:11px 17px;border-radius:999px;box-shadow:var(--shadow-pop);max-width:88%;text-align:center;border:1px solid var(--surface-2);}
 .toast.err{background:var(--red-600);color:#fff;border-color:var(--red-600);}
 .toast.ok{background:var(--amber-500);color:#000;border-color:var(--amber-500);}
 
@@ -142,10 +144,10 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .skel{background:linear-gradient(90deg,var(--surface-2) 25%,#2a2a2a 37%,var(--surface-2) 63%);background-size:400% 100%;animation:skel 1.4s ease infinite;border-radius:8px;}
 @keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
-.badge-verify{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--amber-500);}
+.badge-verify{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:var(--amber-500);}
 .tabs-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
 .tabs-row::-webkit-scrollbar{display:none;}
-.tabs-row button{flex-shrink:0;border:1.5px solid var(--surface-2);background:var(--surface-0);padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--ink-700);cursor:pointer;}
+.tabs-row button{flex-shrink:0;border:1.5px solid var(--surface-2);background:var(--surface-0);padding:9px 15px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-700);cursor:pointer;}
 .tabs-row button.active{background:var(--amber-500);color:#000;border-color:var(--amber-500);}
 .stat-box{background:var(--surface-0);border-radius:var(--radius-m);padding:18px;color:var(--ink-900);border:1px solid var(--surface-2);position:relative;overflow:hidden;}
 .stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--amber-500);}
@@ -166,6 +168,41 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
 #a-rider-search, #a-passenger-search{background:var(--surface-2);border:1.5px solid var(--surface-2);color:var(--ink-900);}
 #a-rider-search:focus, #a-passenger-search:focus{border-color:var(--amber-500);outline:none;}
 #a-rider-search::placeholder, #a-passenger-search::placeholder{color:var(--ink-400);}
+
+/* ============================================================================
+   READABILITY UPGRADE
+   Many small text elements throughout the templates use inline font-size
+   styles (set at design time when the app targeted a small, fixed body copy
+   size). Rather than rewriting every inline style by hand, the rules below
+   bump each of those specific inline pixel sizes up a notch so the whole
+   app reads comfortably larger, while preserving the original layout
+   proportions and hierarchy. Larger inline sizes (icons/emoji/big numbers)
+   are intentionally left untouched.
+   ========================================================================= */
+[style*="font-size:9.5px"]{font-size:12px !important;}
+[style*="font-size:10px"]{font-size:12.5px !important;}
+[style*="font-size:10.5px"]{font-size:13px !important;}
+[style*="font-size:11px"]{font-size:13.5px !important;}
+[style*="font-size:12px"]{font-size:14.5px !important;}
+[style*="font-size:12.5px"]{font-size:15px !important;}
+[style*="font-size:13px"]{font-size:15.5px !important;}
+[style*="font-size:13.5px"]{font-size:16px !important;}
+[style*="font-size:14px"]{font-size:16.5px !important;}
+[style*="font-size:15px"]{font-size:17px !important;}
+[style*="font-size:16px"]{font-size:17.5px !important;}
+[style*="font-size:17px"]{font-size:18.5px !important;}
+[style*="font-size:18px"]{font-size:19.5px !important;}
+
+/* ---------- MOBILE RESPONSIVENESS ---------- */
+@media (max-width:380px){
+  :root{ --fs-h1:28px; --fs-h2:21px; --fs-h3:18px; }
+  .auth-hero h1{font-size:29px;}
+  .screen-body{padding:14px;}
+  .btn{padding:14px 16px;}
+}
+@media (min-width:481px){
+  html{ -webkit-text-size-adjust:100%; }
+}
 </style>
 </head>
 <body>
@@ -190,8 +227,8 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
         <div class="brand-mark">Z</div>
         <span class="zr-eyebrow" style="color:var(--amber-500);">ZRIDER</span>
       </div>
-      <h1>Bike rides across Ikeja & Kosofe, on demand.</h1>
-      <p>Quick okada pickups, fair meter pricing, within Ikeja and Kosofe LGA.</p>
+      <h1>Bike rides across Lagos & Ogun, on demand.</h1>
+      <p>Quick okada pickups, fair meter pricing, anywhere in Lagos State and Ogun State.</p>
       <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
         <div style="flex:1;min-width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 10px;text-align:center;">
           <div style="font-size:20px;">📍</div>
@@ -288,7 +325,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       <p class="muted" style="font-size:12px;" id="p-greeting-line">Good day</p>
       <h3 style="margin-top:2px;" id="p-greeting-name">—</h3>
     </div>
-    <span class="pill pill-green" style="font-size:10px;">📍 Ikeja & Kosofe</span>
+    <span class="pill pill-green" style="font-size:10px;">📍 Lagos & Ogun</span>
   </div>
   <div style="position:relative;margin-top:10px;">
     <div class="map-wrap">
@@ -305,7 +342,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
   <div class="sheet-handle"></div>
   <div class="zr-eyebrow">PLAN YOUR TRIP</div>
   <div class="field" style="margin-top:10px;"><label>Pickup</label><input type="text" id="p-pickup" placeholder="Use my location or search…"></div>
-  <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (Ikeja or Kosofe LGA)"></div>
+  <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (Anywhere in Lagos or Ogun State)"></div>
   <div class="row gap" style="margin-bottom:10px;flex-wrap:wrap;">
     <button class="btn btn-outline btn-sm" id="p-use-gps">📍 Use current location</button>
     <button class="btn btn-outline btn-sm hidden" id="p-quick-home">🏠 Home</button>
@@ -337,7 +374,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
   <div style="text-align:center;padding:18px 0;">
     <span class="spinner dark"></span>
     <h3 style="margin-top:14px;">Finding a rider near you…</h3>
-    <p class="muted" style="margin-top:6px;">Matching with online riders in Ikeja</p>
+    <p class="muted" style="margin-top:6px;">Matching with online riders near you</p>
     <p class="meter" id="p-search-elapsed" style="margin-top:10px;font-size:13px;color:var(--ink-400);">00:00</p>
     <button class="btn btn-ghost" id="p-cancel-search" style="margin-top:10px;color:var(--red-600);">Cancel request</button>
   </div>
@@ -611,7 +648,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
   <div class="row">
     <div>
       <h3 id="r-status-label">You're offline</h3>
-      <p class="muted">Go online to accept rides in Ikeja & Kosofe.</p>
+      <p class="muted">Go online to accept rides anywhere across Lagos & Ogun States.</p>
     </div>
     <label style="position:relative;display:inline-block;width:52px;height:30px;flex-shrink:0;">
       <input type="checkbox" id="r-online-toggle" style="opacity:0;width:0;height:0;">
@@ -927,7 +964,7 @@ p{margin:0;line-height:1.5;} .muted{color:var(--ink-400);font-size:13px;}
       (with "Maps JavaScript API" + "Places API" enabled) to get live maps,
       address autocomplete, and accurate geofencing on the destination field.
       Without it the app still fully works: GPS pickup is always exact,
-      destination falls back to a text match against "Ikeja".
+      destination falls back to a text match against known LGA/locality names.
    2. PAYSTACK_PUBLIC_KEY below is empty. Add your Paystack public key
       (pk_live_... or pk_test_...) to enable card/bank payment collection.
       Cash payment works regardless.
@@ -954,31 +991,107 @@ const BANK_ACCOUNT = { bank:'Opay', name:'Zmonie Service', number:'08140738888' 
 const DEFAULT_REFERRAL_SETTINGS = { enabled:true, rewardAmount:500, condition:'first_trip', autoApprove:true };
 let referralSettings = Object.assign({}, DEFAULT_REFERRAL_SETTINGS);
 let currentWalletBalance = 0; // cached passenger wallet balance
+// Full service coverage: every Local Government Area (LGA) in Lagos State
+// and Ogun State. Each zone is a circular geofence (center + radius) used
+// for fast, dependency-free "is this point in our coverage area" checks,
+// plus a list of recognized locality names used as a text-match fallback
+// when exact GPS coordinates aren't available (e.g. no Maps API key).
+// Radii are sized generously per LGA (denser city LGAs get a tighter
+// radius, larger/rural LGAs get a wider one) so the circles overlap and
+// leave no gaps across either state. Admins can fine-tune any zone's
+// center/radius/keywords from Admin → Service area at any time.
 const DEFAULT_SERVICE_ZONES = [
-  {
-    id: 'ikeja',
-    name: 'Ikeja LGA',
-    lat: 6.6018, lng: 3.3515, radiusKm: 7,
-    areaKeywords: ['ikeja','opebi','allen avenue','allen ave','oregun','agidingbi','alausa',
-      'anifowoshe','adeniyi jones','toyin street','toyin','awolowo way','oba akran',
-      'computer village','otigba','mobolaji bank anthony','sobo arobiodu','adekunle fajuyi',
-      'isaac john','joel ogunnaike','kudirat abiola way','oduduwa way','gra','maryland',
-      'palmgrove','ikeja gra','medical road','airport road']
-  },
-  {
-    id: 'kosofe',
-    name: 'Kosofe LGA',
-    lat: 6.5833, lng: 3.4000, radiusKm: 7,
-    areaKeywords: ['kosofe','ketu','mile 12','mile12','oworo','alapere','ojota','agboville',
-      'magodo','shangisha','omole','berger','anthony village','gbagada','oworonshoki',
-      'bariga','ifako','aguda','kosofe road','ikorodu road','clay','medina']
-  }
+  // ---------------- LAGOS STATE (20 LGAs) ----------------
+  { id:'agege', name:'Agege LGA (Lagos)', lat:6.6153, lng:3.3287, radiusKm:6,
+    areaKeywords:['agege','iju','oko oba','ogba','pen cinema','dopemu','orile agege'] },
+  { id:'ajeromi-ifelodun', name:'Ajeromi-Ifelodun LGA (Lagos)', lat:6.4553, lng:3.3315, radiusKm:6,
+    areaKeywords:['ajeromi','ifelodun','ajegunle','olodi','wilmer','tolu','boundary'] },
+  { id:'alimosho', name:'Alimosho LGA (Lagos)', lat:6.6069, lng:3.2680, radiusKm:10,
+    areaKeywords:['alimosho','egbeda','idimu','ipaja','ayobo','akowonjo','egbe','abule egba','igando','ikotun'] },
+  { id:'amuwo-odofin', name:'Amuwo-Odofin LGA (Lagos)', lat:6.4667, lng:3.2833, radiusKm:8,
+    areaKeywords:['amuwo odofin','festac','festac town','satellite town','mile 2','kirikiri'] },
+  { id:'apapa', name:'Apapa LGA (Lagos)', lat:6.4498, lng:3.3593, radiusKm:6,
+    areaKeywords:['apapa','wharf','tin can island','ijora'] },
+  { id:'badagry', name:'Badagry LGA (Lagos)', lat:6.4149, lng:2.8877, radiusKm:18,
+    areaKeywords:['badagry','ajara','topo','seme','apa','iworo'] },
+  { id:'epe', name:'Epe LGA (Lagos)', lat:6.5832, lng:3.9799, radiusKm:18,
+    areaKeywords:['epe','poka','ejinrin','ilara','oreta','agbowa'] },
+  { id:'eti-osa', name:'Eti-Osa LGA (Lagos)', lat:6.4400, lng:3.4700, radiusKm:12,
+    areaKeywords:['eti osa','victoria island','vi','ikoyi','lekki phase 1','lekki','oniru','ajah'] },
+  { id:'ibeju-lekki', name:'Ibeju-Lekki LGA (Lagos)', lat:6.4698, lng:3.6810, radiusKm:20,
+    areaKeywords:['ibeju lekki','lekki free trade zone','awoyaya','abraham adesanya','sangotedo','eleko'] },
+  { id:'ifako-ijaiye', name:'Ifako-Ijaiye LGA (Lagos)', lat:6.6667, lng:3.3167, radiusKm:7,
+    areaKeywords:['ifako ijaiye','ijaiye','fagba','ojokoro','iju ishaga','ogba'] },
+  { id:'ikeja', name:'Ikeja LGA (Lagos)', lat:6.6018, lng:3.3515, radiusKm:8,
+    areaKeywords:['ikeja','opebi','allen avenue','allen ave','oregun','agidingbi','alausa',
+      'toyin street','awolowo way','oba akran','computer village','maryland','palmgrove',
+      'ikeja gra','airport road'] },
+  { id:'ikorodu', name:'Ikorodu LGA (Lagos)', lat:6.6194, lng:3.5105, radiusKm:16,
+    areaKeywords:['ikorodu','igbogbo','ijede','imota','owutu','baiyeku'] },
+  { id:'kosofe', name:'Kosofe LGA (Lagos)', lat:6.5833, lng:3.4000, radiusKm:8,
+    areaKeywords:['kosofe','ketu','mile 12','mile12','oworo','alapere','ojota','magodo',
+      'shangisha','omole','berger','anthony village','gbagada','oworonshoki','bariga','ifako'] },
+  { id:'lagos-island', name:'Lagos Island LGA (Lagos)', lat:6.4550, lng:3.3841, radiusKm:6,
+    areaKeywords:['lagos island','marina','tinubu','idumota','oke arin','obalende'] },
+  { id:'lagos-mainland', name:'Lagos Mainland LGA (Lagos)', lat:6.5000, lng:3.3833, radiusKm:6,
+    areaKeywords:['lagos mainland','yaba','ebute metta','iddo','otto','sabo'] },
+  { id:'mushin', name:'Mushin LGA (Lagos)', lat:6.5333, lng:3.3500, radiusKm:6,
+    areaKeywords:['mushin','papa ajao','odi olowo','ilupeju','idi araba'] },
+  { id:'ojo', name:'Ojo LGA (Lagos)', lat:6.4636, lng:3.1839, radiusKm:12,
+    areaKeywords:['ojo','okokomaiko','iyana iba','alaba','trade fair','ajangbadi'] },
+  { id:'oshodi-isolo', name:'Oshodi-Isolo LGA (Lagos)', lat:6.5500, lng:3.3167, radiusKm:7,
+    areaKeywords:['oshodi','isolo','mafoluku','okota','ajao estate','ilasamaja'] },
+  { id:'shomolu', name:'Shomolu LGA (Lagos)', lat:6.5333, lng:3.3833, radiusKm:6,
+    areaKeywords:['shomolu','somolu','bariga','pedro','fola agoro'] },
+  { id:'surulere', name:'Surulere LGA (Lagos)', lat:6.5000, lng:3.3500, radiusKm:7,
+    areaKeywords:['surulere','ojuelegba','adeniran ogunsanya','aguda','lawanson','bode thomas'] },
+  // ---------------- OGUN STATE (20 LGAs) ----------------
+  { id:'abeokuta-north', name:'Abeokuta North LGA (Ogun)', lat:7.2000, lng:3.4500, radiusKm:14,
+    areaKeywords:['abeokuta north','iberekodo','oke ilewo','ikija'] },
+  { id:'abeokuta-south', name:'Abeokuta South LGA (Ogun)', lat:7.1475, lng:3.3619, radiusKm:14,
+    areaKeywords:['abeokuta south','abeokuta','ake','ita oshin','oke ijeun','kuto'] },
+  { id:'ado-odo-ota', name:'Ado-Odo/Ota LGA (Ogun)', lat:6.6800, lng:3.2350, radiusKm:16,
+    areaKeywords:['ado odo','ota','sango ota','iju','atan','agbara'] },
+  { id:'ewekoro', name:'Ewekoro LGA (Ogun)', lat:6.9167, lng:3.2167, radiusKm:16,
+    areaKeywords:['ewekoro','itori','papa lanto','yobo'] },
+  { id:'ifo', name:'Ifo LGA (Ogun)', lat:6.8167, lng:3.2000, radiusKm:16,
+    areaKeywords:['ifo','sango','akute','oke aro','ajuwon'] },
+  { id:'ijebu-east', name:'Ijebu East LGA (Ogun)', lat:6.8000, lng:4.1500, radiusKm:18,
+    areaKeywords:['ijebu east','ogbere','ogogoro','omu'] },
+  { id:'ijebu-north', name:'Ijebu North LGA (Ogun)', lat:6.9333, lng:3.9167, radiusKm:18,
+    areaKeywords:['ijebu north','ijebu igbo','isoya','ago iwoye'] },
+  { id:'ijebu-north-east', name:'Ijebu North East LGA (Ogun)', lat:6.9500, lng:4.0000, radiusKm:18,
+    areaKeywords:['ijebu north east','atan','ogbogbo'] },
+  { id:'ijebu-ode', name:'Ijebu Ode LGA (Ogun)', lat:6.8206, lng:3.9186, radiusKm:14,
+    areaKeywords:['ijebu ode','ijebu-ode','ita oba','isoku'] },
+  { id:'ikenne', name:'Ikenne LGA (Ogun)', lat:6.8667, lng:3.7167, radiusKm:14,
+    areaKeywords:['ikenne','irolu','ilisan','ogere'] },
+  { id:'imeko-afon', name:'Imeko Afon LGA (Ogun)', lat:7.3500, lng:2.8667, radiusKm:20,
+    areaKeywords:['imeko','afon','imasai'] },
+  { id:'ipokia', name:'Ipokia LGA (Ogun)', lat:6.6667, lng:2.9333, radiusKm:18,
+    areaKeywords:['ipokia','ilaro road','idiroko','ajilete'] },
+  { id:'obafemi-owode', name:'Obafemi Owode LGA (Ogun)', lat:7.0000, lng:3.5000, radiusKm:16,
+    areaKeywords:['obafemi owode','owode','mokoloki','kobape'] },
+  { id:'odeda', name:'Odeda LGA (Ogun)', lat:7.2000, lng:3.4000, radiusKm:16,
+    areaKeywords:['odeda','alabata','oba','soyoye'] },
+  { id:'odogbolu', name:'Odogbolu LGA (Ogun)', lat:6.7667, lng:3.8333, radiusKm:16,
+    areaKeywords:['odogbolu','ilishan','omu ijebu'] },
+  { id:'ogun-waterside', name:'Ogun Waterside LGA (Ogun)', lat:6.5500, lng:4.2000, radiusKm:20,
+    areaKeywords:['ogun waterside','abigi','ayepe'] },
+  { id:'remo-north', name:'Remo North LGA (Ogun)', lat:6.9667, lng:3.6500, radiusKm:14,
+    areaKeywords:['remo north','isara','ode remo'] },
+  { id:'shagamu', name:'Shagamu LGA (Ogun)', lat:6.8461, lng:3.6382, radiusKm:14,
+    areaKeywords:['shagamu','sagamu','makun','ogijo'] },
+  { id:'yewa-north', name:'Yewa North LGA (Ogun)', lat:7.3500, lng:2.9167, radiusKm:20,
+    areaKeywords:['yewa north','egbado north','ayetoro'] },
+  { id:'yewa-south', name:'Yewa South LGA (Ogun)', lat:6.9667, lng:2.8500, radiusKm:18,
+    areaKeywords:['yewa south','egbado south','ilaro'] }
 ];
 // Backward-compat single-zone alias (used by fare calc distance default)
 const DEFAULT_SERVICE_AREA = Object.assign({}, DEFAULT_SERVICE_ZONES[0]);
 let serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
 // Keep a flat alias for legacy code that references serviceArea.name in warning messages
-let serviceArea = { name: 'Ikeja & Kosofe LGA', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords), lat: DEFAULT_SERVICE_ZONES[0].lat, lng: DEFAULT_SERVICE_ZONES[0].lng, radiusKm: DEFAULT_SERVICE_ZONES[0].radiusKm };
+let serviceArea = { name: 'Lagos & Ogun States', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords), lat: DEFAULT_SERVICE_ZONES[0].lat, lng: DEFAULT_SERVICE_ZONES[0].lng, radiusKm: DEFAULT_SERVICE_ZONES[0].radiusKm };
 const DEFAULT_FARE_RULES = { baseFare: 200, perKm: 60, perMin: 10, minFare: 300, commissionPct: 15 };
 
 // ---------- FIREBASE INIT ----------
@@ -1165,17 +1278,31 @@ function haversineKm(lat1,lng1,lat2,lng2){
   const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
+// Rough outer bounds of Lagos + Ogun States, used as a cheap first-pass
+// reject before running the more expensive per-zone haversine loop below.
+const LAGOS_OGUN_BOUNDS = { minLat:6.2, maxLat:7.6, minLng:2.6, maxLng:4.4 };
 function isInServiceArea(lat,lng){
   if(lat==null || lng==null) return false;
+  const b = LAGOS_OGUN_BOUNDS;
+  if(lat < b.minLat || lat > b.maxLat || lng < b.minLng || lng > b.maxLng) return false;
   return serviceZones.some(z => haversineKm(lat,lng,z.lat,z.lng) <= z.radiusKm);
+}
+// Cache the flattened keyword list per serviceZones array so repeated text
+// lookups (e.g. while a passenger types) don't rebuild it on every keystroke.
+let _zoneKeywordsCache = null, _zoneKeywordsCacheFor = null;
+function getAllZoneKeywords(){
+  if(_zoneKeywordsCacheFor !== serviceZones){
+    _zoneKeywordsCache = serviceZones.flatMap(z => (z.areaKeywords || [z.name]).map(k=>k.toLowerCase()));
+    _zoneKeywordsCacheFor = serviceZones;
+  }
+  return _zoneKeywordsCache;
 }
 // Fallback when exact coordinates aren't available — checks address text against all zone keywords.
 function isLikelyInServiceArea(point){
   if(!point) return false;
   if(point.lat != null && point.lng != null) return isInServiceArea(point.lat, point.lng);
   const text = (point.address || '').toLowerCase();
-  const allKeywords = serviceZones.flatMap(z => z.areaKeywords || [z.name]);
-  return allKeywords.some(k => text.includes(k.toLowerCase()));
+  return getAllZoneKeywords().some(k => text.includes(k));
 }
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
@@ -1230,11 +1357,18 @@ function renderMapInto(elId, fallbackId, center){
         const el = $(elId);
         if(!el) return;
         const fb = $(fallbackId); if(fb) fb.style.display = 'none';
-        const map = new google.maps.Map(el, { center: center || {lat:serviceArea.lat,lng:serviceArea.lng}, zoom: 14, disableDefaultUI:true, zoomControl:true });
-        new google.maps.Circle({
-          strokeColor:'#0B6E4F', strokeOpacity:0.6, strokeWeight:2,
-          fillColor:'#0B6E4F', fillOpacity:0.08,
-          map, center:{lat:serviceArea.lat,lng:serviceArea.lng}, radius: serviceArea.radiusKm*1000
+        const defaultCenter = {
+          lat: serviceZones.reduce((s,z)=>s+z.lat,0) / serviceZones.length,
+          lng: serviceZones.reduce((s,z)=>s+z.lng,0) / serviceZones.length
+        };
+        const map = new google.maps.Map(el, { center: center || defaultCenter, zoom: center ? 14 : 9, disableDefaultUI:true, zoomControl:true });
+        // Draw a lightweight geofence circle for every LGA zone (Lagos + Ogun).
+        serviceZones.forEach(z=>{
+          new google.maps.Circle({
+            strokeColor:'#0B6E4F', strokeOpacity:0.5, strokeWeight:1,
+            fillColor:'#0B6E4F', fillOpacity:0.06,
+            map, center:{lat:z.lat,lng:z.lng}, radius: z.radiusKm*1000
+          });
         });
         if(center){ new google.maps.Marker({ position: center, map, title:'You' }); }
       } else {
@@ -1254,10 +1388,14 @@ function renderFreeMapEmbed(elId, fallbackId, center){
   const el = $(elId);
   if(!el) return;
   const fb = $(fallbackId); if(fb) fb.style.display = 'none';
-  // Default to midpoint between Ikeja and Kosofe so both zones are visible.
-  const defaultCenter = { lat: (serviceZones[0].lat + (serviceZones[1]?.lat||serviceZones[0].lat))/2, lng: (serviceZones[0].lng + (serviceZones[1]?.lng||serviceZones[0].lng))/2 };
+  // Default to the centroid of every active service zone (all LGAs across
+  // Lagos & Ogun) so the map opens roughly centered on the coverage area.
+  const defaultCenter = {
+    lat: serviceZones.reduce((s,z)=>s+z.lat,0) / serviceZones.length,
+    lng: serviceZones.reduce((s,z)=>s+z.lng,0) / serviceZones.length
+  };
   const point = center || defaultCenter;
-  const zoom = center ? 14 : 12; // zoom out slightly when showing full coverage area
+  const zoom = center ? 14 : 9; // zoom well out when showing the full two-state coverage area
   const src = `https://maps.google.com/maps?q=${point.lat},${point.lng}&z=${zoom}&output=embed`;
   el.innerHTML = `<iframe src="${src}" style="width:100%;height:100%;border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 }
@@ -1297,7 +1435,7 @@ function loadSettings(){
       if(!sz.exists) db.collection('settings').doc('serviceZones').set({ zones: DEFAULT_SERVICE_ZONES }).catch(()=>{});
     }
     serviceArea = {
-      name: serviceZones.map(z=>z.name).join(' & '),
+      name: 'Lagos & Ogun States',
       areaKeywords: serviceZones.flatMap(z=>z.areaKeywords||[z.name]),
       lat: serviceZones[0].lat, lng: serviceZones[0].lng, radiusKm: serviceZones[0].radiusKm
     };
@@ -1306,7 +1444,7 @@ function loadSettings(){
   }).catch(()=>{
     fareRules = DEFAULT_FARE_RULES;
     serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
-    serviceArea = { name:'Ikeja & Kosofe LGA', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords||[]), lat:DEFAULT_SERVICE_ZONES[0].lat, lng:DEFAULT_SERVICE_ZONES[0].lng, radiusKm:DEFAULT_SERVICE_ZONES[0].radiusKm };
+    serviceArea = { name:'Lagos & Ogun States', areaKeywords: DEFAULT_SERVICE_ZONES.flatMap(z=>z.areaKeywords||[]), lat:DEFAULT_SERVICE_ZONES[0].lat, lng:DEFAULT_SERVICE_ZONES[0].lng, radiusKm:DEFAULT_SERVICE_ZONES[0].radiusKm };
     referralSettings = Object.assign({}, DEFAULT_REFERRAL_SETTINGS);
   });
 }
@@ -1977,11 +2115,15 @@ function applyFareBreakdown(distKm){
   const card = $('p-fare-card'); if(card){ card.classList.remove('hidden'); card.dataset.distKm = distKm; card.dataset.fare = breakdown.total; }
 }
 
-// Geocode two addresses via Nominatim and return distance + coordinates
+// Geocode two addresses via Nominatim and return distance + coordinates.
+// Biased (not strictly bounded) to the Lagos/Ogun bounding box so results
+// for common locality names resolve correctly across both states, while
+// still allowing a nationwide match if nothing is found in that box.
+const LAGOS_OGUN_VIEWBOX = '2.6,7.6,4.4,6.2'; // left,top,right,bottom (lng/lat)
 async function geocodeAddresses(pickupAddr, destAddr){
   const geocode = async (addr)=>{
-    const q = encodeURIComponent(addr + ', Lagos, Nigeria');
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, { headers:{'Accept-Language':'en'} });
+    const q = encodeURIComponent(addr + ', Nigeria');
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&viewbox=${LAGOS_OGUN_VIEWBOX}&bounded=0`, { headers:{'Accept-Language':'en'} });
     const data = await res.json();
     if(data && data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     return null;
@@ -1993,18 +2135,17 @@ async function geocodeAddresses(pickupAddr, destAddr){
   return { distKm: estimateDistFromAddresses(pickupAddr, destAddr) };
 }
 
-// Rough estimate based on area positions within Ikeja/Kosofe when geocoding fails
-const AREA_POSITIONS = {
-  'ikeja':{lat:6.6018,lng:3.3515}, 'opebi':{lat:6.5978,lng:3.3581}, 'allen':{lat:6.5975,lng:3.3546},
-  'oregun':{lat:6.6089,lng:3.3706}, 'agidingbi':{lat:6.6060,lng:3.3620}, 'alausa':{lat:6.6241,lng:3.3497},
-  'ketu':{lat:6.5924,lng:3.3933}, 'gbagada':{lat:6.5550,lng:3.3831}, 'magodo':{lat:6.6169,lng:3.3992},
-  'ojota':{lat:6.5925,lng:3.3831}, 'maryland':{lat:6.5620,lng:3.3530}, 'palmgrove':{lat:6.5620,lng:3.3533},
-  'bariga':{lat:6.5350,lng:3.3880}, 'oworonshoki':{lat:6.5395,lng:3.3817}, 'anthony':{lat:6.5645,lng:3.3643}
-};
+// Rough estimate based on the live service-zone centers (all LGAs across
+// Lagos & Ogun) when geocoding fails — reuses serviceZones/areaKeywords
+// directly so this fallback always matches whatever coverage area is
+// currently configured, instead of a separate hardcoded list to maintain.
 function estimateDistFromAddresses(addr1, addr2){
   const find = (addr)=>{
-    const a = addr.toLowerCase();
-    for(const [k,v] of Object.entries(AREA_POSITIONS)){ if(a.includes(k)) return v; }
+    const a = (addr || '').toLowerCase();
+    for(const z of serviceZones){
+      const keywords = z.areaKeywords && z.areaKeywords.length ? z.areaKeywords : [z.name];
+      if(keywords.some(k => a.includes(String(k).toLowerCase()))) return { lat:z.lat, lng:z.lng };
+    }
     return null;
   };
   const p = find(addr1), d = find(addr2);
@@ -2348,7 +2489,7 @@ function openReferralModal(){
     const refLink = `${location.origin}${location.pathname}?ref=${code}`;
     overlay.querySelector('#ref-share-btn').addEventListener('click', ()=>{
       const rewardAmt = referralSettings.rewardAmount || 500;
-      const shareText = `🏍️ Ride fast, ride cheap with Zrider!\n\nI use Zrider for quick & affordable okada rides across Ikeja & Kosofe, Lagos.\n\n🎁 Use my referral code *${code}* when you sign up. Once you complete your first ride, I earn ₦${rewardAmt.toLocaleString()} — and you get a better ride experience!\n\nSign up here 👇\n${refLink}`;
+      const shareText = `🏍️ Ride fast, ride cheap with Zrider!\n\nI use Zrider for quick & affordable okada rides across Lagos and Ogun States.\n\n🎁 Use my referral code *${code}* when you sign up. Once you complete your first ride, I earn ₦${rewardAmt.toLocaleString()} — and you get a better ride experience!\n\nSign up here 👇\n${refLink}`;
       if(navigator.share){ navigator.share({ title:'Join Zrider — Fast Bike Rides in Lagos', text: shareText, url: refLink }).catch(()=>{}); }
       else{ navigator.clipboard.writeText(shareText).catch(()=>{}); toast('Message copied — paste it on WhatsApp or anywhere!','ok'); }
     });
@@ -3254,7 +3395,7 @@ function aRenderArea(){
       if(!name || isNaN(lat) || isNaN(lng) || isNaN(radiusKm)){ toast('Fill in all zone fields.', 'err'); return; }
       serviceZones[idx] = Object.assign({}, serviceZones[idx], { name, lat, lng, radiusKm, areaKeywords: keywords });
       await db.collection('settings').doc('serviceZones').set({ zones: serviceZones });
-      serviceArea.name = serviceZones.map(z=>z.name).join(' & ');
+      serviceArea.name = 'Lagos & Ogun States';
       serviceArea.areaKeywords = serviceZones.flatMap(z=>z.areaKeywords||[]);
       toast(`${name} zone saved.`, 'ok');
       summary.innerHTML = serviceZones.map(z=>`<p style="font-size:13px;margin-bottom:4px;">✅ <strong>${z.name}</strong> — ${z.radiusKm}km radius</p>`).join('');
