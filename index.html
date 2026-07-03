@@ -203,6 +203,18 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 @media (min-width:481px){
   html{ -webkit-text-size-adjust:100%; }
 }
+
+/* ---------- FREE ADDRESS AUTOCOMPLETE DROPDOWN ---------- */
+.zr-suggest-list{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--surface-0);border:1.5px solid var(--surface-2);border-radius:var(--radius-s);box-shadow:var(--shadow-pop);z-index:40;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.zr-suggest-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;padding:11px 12px;cursor:pointer;font-size:14.5px;color:var(--ink-900);border-bottom:1px solid var(--surface-2);}
+.zr-suggest-item:last-child{border-bottom:none;}
+.zr-suggest-item:hover, .zr-suggest-item:active{background:var(--surface-2);}
+.zr-suggest-tag{flex-shrink:0;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--amber-500);background:var(--amber-100);border-radius:5px;padding:3px 6px;}
+.zr-suggest-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ---------- PWA INSTALL UI ---------- */
+.zr-install-btn{display:flex;align-items:center;gap:6px;background:var(--amber-500);color:#000;border:none;border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;}
+.zr-install-btn:active{transform:scale(.96);}
 </style>
 </head>
 <body>
@@ -223,9 +235,12 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 <template id="tpl-auth">
   <div class="auth-screen">
     <div class="auth-hero">
-      <div class="brand-row">
-        <div class="brand-mark">Z</div>
-        <span class="zr-eyebrow" style="color:var(--amber-500);">ZRIDER</span>
+      <div class="brand-row" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="brand-mark">Z</div>
+          <span class="zr-eyebrow" style="color:var(--amber-500);">ZRIDER</span>
+        </div>
+        <button class="zr-install-btn hidden" id="zr-install-btn-auth">⬇ Install App</button>
       </div>
       <h1>Bike rides across Lagos & Ogun, on demand.</h1>
       <p>Quick okada pickups, fair meter pricing, anywhere in Lagos State and Ogun State.</p>
@@ -301,6 +316,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="topbar">
       <div class="brand"><div class="brand-mark">Z</div><strong>Zrider</strong></div>
       <div class="row gap">
+        <button class="icon-btn hidden" id="zr-install-btn-p" title="Install app">⬇</button>
         <button class="icon-btn" id="p-open-notifs" title="Notifications">🔔</button>
         <div class="avatar" id="p-avatar">P</div>
       </div>
@@ -608,6 +624,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="topbar">
       <div class="brand"><div class="brand-mark">Z</div><strong>Zrider · Rider</strong></div>
       <div class="row gap">
+        <button class="icon-btn hidden" id="zr-install-btn-r" title="Install app">⬇</button>
         <button class="icon-btn" id="r-open-notifs">🔔</button>
         <div class="avatar" id="r-avatar">R</div>
       </div>
@@ -797,7 +814,10 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
   <div class="screen">
     <div class="topbar">
       <div class="brand"><div class="brand-mark">Z</div><strong>Zrider · Admin</strong></div>
-      <button class="icon-btn" id="a-logout">⎋</button>
+      <div class="row gap">
+        <button class="icon-btn hidden" id="zr-install-btn-a" title="Install app">⬇</button>
+        <button class="icon-btn" id="a-logout">⎋</button>
+      </div>
     </div>
     <div class="tabs-row" id="a-tabs" style="padding:12px 16px 0;">
       <button data-tab="overview" class="active">Overview</button>
@@ -1119,6 +1139,9 @@ const root = document.getElementById('zr-root');
 // ---------- Connectivity banner ----------
 // ---------- Service Worker + PWA Install ----------
 let deferredInstallPrompt = null;
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+const IS_STANDALONE = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const INSTALL_BTN_IDS = ['zr-install-btn-auth','zr-install-btn-p','zr-install-btn-r','zr-install-btn-a'];
 
 function setupPWA(){
   // Register service worker
@@ -1138,19 +1161,99 @@ function setupPWA(){
       .catch(err => console.warn('SW registration failed:', err));
   }
 
-  // Capture the install prompt for the banner
+  if(IS_STANDALONE){ return; } // already installed — never show install UI
+
+  // Capture the install prompt for the banner + buttons
   window.addEventListener('beforeinstallprompt', (e)=>{
     e.preventDefault();
     deferredInstallPrompt = e;
     showInstallBanner();
+    showInstallButtons();
   });
 
   window.addEventListener('appinstalled', ()=>{
     deferredInstallPrompt = null;
     const b = document.getElementById('zr-install-banner');
     if(b) b.remove();
+    hideInstallButtons();
     toast('Zrider installed! Find it on your home screen.','ok');
   });
+
+  // iOS Safari never fires beforeinstallprompt, but "Add to Home Screen"
+  // still works there via the Share sheet — so still surface a button
+  // that opens step-by-step instructions instead of a native prompt.
+  if(IS_IOS) showInstallButtons();
+
+  // Wire every install button already in the DOM (topbar + auth screen).
+  // A MutationObserver keeps newly-mounted screens' buttons wired too,
+  // since templates are re-cloned into the DOM on navigation.
+  wireInstallButtons();
+  const mo = new MutationObserver(()=> wireInstallButtons());
+  mo.observe(document.getElementById('zr-root') || document.body, { childList:true, subtree:true });
+}
+
+function showInstallButtons(){
+  INSTALL_BTN_IDS.forEach(id=>{ const b = document.getElementById(id); if(b) b.classList.remove('hidden'); });
+}
+function hideInstallButtons(){
+  INSTALL_BTN_IDS.forEach(id=>{ const b = document.getElementById(id); if(b) b.classList.add('hidden'); });
+}
+function wireInstallButtons(){
+  INSTALL_BTN_IDS.forEach(id=>{
+    const b = document.getElementById(id);
+    if(!b) return;
+    // Always discoverable (not just after the browser fires
+    // beforeinstallprompt) — tapping it either triggers the native
+    // install prompt if it's ready, or opens free step-by-step
+    // instructions otherwise. Never shown once already installed.
+    b.classList.remove('hidden');
+    if(b.dataset.wired) return;
+    b.dataset.wired = '1';
+    b.addEventListener('click', onInstallButtonClick);
+  });
+}
+async function onInstallButtonClick(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    if(outcome !== 'accepted') showInstallButtons(); // keep offering if dismissed
+    return;
+  }
+  showInstallInstructionsModal();
+}
+
+// Free, no-account instructions for platforms that don't support the
+// native install prompt (mainly iOS Safari) or before Chrome has decided
+// the page is "installable enough" to fire beforeinstallprompt yet.
+function showInstallInstructionsModal(){
+  closeModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'zr-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-head"><h3>Install Zrider</h3><button class="modal-close" data-close>✕</button></div>
+      ${IS_IOS ? `
+        <p class="muted">On iPhone/iPad (Safari):</p>
+        <ol style="margin:10px 0 0;padding-left:18px;font-size:15px;line-height:1.7;color:var(--ink-900);">
+          <li>Tap the <strong>Share</strong> icon (square with an arrow) in Safari's toolbar.</li>
+          <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
+          <li>Tap <strong>Add</strong> — Zrider now opens full-screen from your home screen, no browser bar, and works offline.</li>
+        </ol>
+      ` : `
+        <p class="muted">On Android/Chrome:</p>
+        <ol style="margin:10px 0 0;padding-left:18px;font-size:15px;line-height:1.7;color:var(--ink-900);">
+          <li>Tap the <strong>⋮</strong> menu in your browser's top-right corner.</li>
+          <li>Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+          <li>Confirm — Zrider now launches from your home screen like a native app, completely free, no app-store download needed.</li>
+        </ol>
+      `}
+      <p class="muted" style="margin-top:14px;font-size:13px;">Installing is free and doesn't require any account, payment, or subscription.</p>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+  overlay.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal));
 }
 
 function showInstallBanner(){
@@ -1419,6 +1522,109 @@ function attachAutocomplete(inputEl, onPlace){
   });
 }
 
+// ---------- FREE ADDRESS AUTOCOMPLETE (no API key, no subscription) ----------
+// Two layers, both free:
+//  1. Instant local matches against the LGA/locality names already built
+//     into serviceZones — zero network cost, works offline, and always
+//     covers every LGA in Lagos & Ogun States.
+//  2. A debounced lookup against the free OpenStreetMap Nominatim search
+//     API (no key, no billing) for real street-level address suggestions,
+//     biased to the Lagos/Ogun bounding box.
+// This works standalone (MAPS_API_KEY empty) and alongside the optional
+// Google Places autocomplete above if a key is ever added later.
+function attachFreeAutocomplete(inputEl, onSelect){
+  if(!inputEl) return;
+  const wrap = inputEl.closest('.field') || inputEl.parentElement;
+  if(!wrap) return;
+  wrap.style.position = wrap.style.position || 'relative';
+  const list = document.createElement('div');
+  list.className = 'zr-suggest-list hidden';
+  wrap.appendChild(list);
+
+  let debounceTimer = null;
+  let activeQuery = '';
+
+  function hideList(){ list.classList.add('hidden'); list.innerHTML = ''; }
+
+  function renderSuggestions(items){
+    if(!items.length){ hideList(); return; }
+    list.innerHTML = items.map((it,i)=>
+      `<button type="button" class="zr-suggest-item" data-idx="${i}">
+        <span class="zr-suggest-tag">${it.tag}</span>
+        <span class="zr-suggest-text">${it.label}</span>
+      </button>`
+    ).join('');
+    list.classList.remove('hidden');
+    list.querySelectorAll('.zr-suggest-item').forEach(btn=>{
+      btn.addEventListener('mousedown', (e)=>{ // mousedown fires before input blur
+        e.preventDefault();
+        const it = items[parseInt(btn.dataset.idx)];
+        onSelect({ lat: it.lat, lng: it.lng, address: it.label });
+        inputEl.value = it.label;
+        hideList();
+      });
+    });
+  }
+
+  function localMatches(query){
+    const q = query.toLowerCase();
+    const seen = new Set();
+    const out = [];
+    for(const z of serviceZones){
+      const kws = (z.areaKeywords && z.areaKeywords.length) ? z.areaKeywords : [z.name];
+      for(const k of kws){
+        if(k.toLowerCase().startsWith(q) && !seen.has(k)){
+          seen.add(k);
+          out.push({ label: k.replace(/\b\w/g, c=>c.toUpperCase()) + ', ' + z.name, lat:z.lat, lng:z.lng, tag:'LGA' });
+        }
+        if(out.length >= 5) break;
+      }
+      if(out.length >= 5) break;
+    }
+    return out;
+  }
+
+  async function remoteMatches(query){
+    try{
+      const q = encodeURIComponent(query + ', Nigeria');
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&viewbox=${LAGOS_OGUN_VIEWBOX}&bounded=0`, { headers:{'Accept-Language':'en'} });
+      const data = await res.json();
+      return (data||[]).map(d=>({ label:d.display_name, lat:parseFloat(d.lat), lng:parseFloat(d.lon), tag:'MAP' }));
+    }catch(e){ return []; }
+  }
+
+  inputEl.addEventListener('input', ()=>{
+    const query = inputEl.value.trim();
+    activeQuery = query;
+    if(query.length < 2){ hideList(); return; }
+    // Instant, free, local suggestions first — no waiting on network.
+    renderSuggestions(localMatches(query));
+    // Then debounce a free Nominatim lookup for real addresses.
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async ()=>{
+      if(inputEl.value.trim() !== query) return; // stale
+      const remote = await remoteMatches(query);
+      if(activeQuery !== query) return; // user kept typing
+      const local = localMatches(query);
+      renderSuggestions([...local, ...remote].slice(0,8));
+    }, 450);
+  });
+  inputEl.addEventListener('blur', ()=> setTimeout(hideList, 150));
+  inputEl.addEventListener('focus', ()=>{ if(inputEl.value.trim().length >= 2) renderSuggestions(localMatches(inputEl.value.trim())); });
+}
+
+// Bump this whenever DEFAULT_SERVICE_ZONES meaningfully changes (e.g. this
+// app used to ship with only 2 zones — Ikeja & Kosofe — restricting rides
+// to those two LGAs). Existing deployments already have a `serviceZones`
+// document saved in Firestore from before this upgrade, and without a
+// version check that OLD, smaller zone list would keep overriding the new
+// one forever, silently re-imposing the old 2-LGA limit. Any zones doc
+// saved with an older (or missing) version gets auto-upgraded to the
+// current full Lagos & Ogun State coverage the next time the app loads.
+// Admin edits made *after* the upgrade are stamped with the current
+// version, so they're never clobbered by this migration.
+const SERVICE_ZONES_VERSION = 2;
+
 // ---------- SETTINGS (fare rules + service area) ----------
 function loadSettings(){
   return Promise.all([
@@ -1428,11 +1634,16 @@ function loadSettings(){
   ]).then(([fr, sz, rf])=>{
     fareRules = fr.exists ? Object.assign({}, DEFAULT_FARE_RULES, fr.data()) : DEFAULT_FARE_RULES;
     if(!fr.exists) db.collection('settings').doc('fareRules').set(DEFAULT_FARE_RULES).catch(()=>{});
-    if(sz.exists && sz.data().zones && sz.data().zones.length){
-      serviceZones = sz.data().zones;
+    const savedZonesDoc = sz.exists ? sz.data() : null;
+    const savedZonesStale = !savedZonesDoc || !(savedZonesDoc.zonesVersion >= SERVICE_ZONES_VERSION);
+    if(savedZonesDoc && savedZonesDoc.zones && savedZonesDoc.zones.length && !savedZonesStale){
+      serviceZones = savedZonesDoc.zones;
     } else {
+      // No saved zones yet, OR the saved zones predate this coverage
+      // upgrade (e.g. the old Ikeja & Kosofe-only config) — migrate to
+      // the full Lagos & Ogun State zone list and persist the new version.
       serviceZones = DEFAULT_SERVICE_ZONES.map(z=>Object.assign({},z));
-      if(!sz.exists) db.collection('settings').doc('serviceZones').set({ zones: DEFAULT_SERVICE_ZONES }).catch(()=>{});
+      db.collection('settings').doc('serviceZones').set({ zones: DEFAULT_SERVICE_ZONES, zonesVersion: SERVICE_ZONES_VERSION }).catch(()=>{});
     }
     serviceArea = {
       name: 'Lagos & Ogun States',
@@ -1972,6 +2183,12 @@ function pSheetForm(sheet){
 
   attachAutocomplete($('p-pickup'), place => { pPickup = place; $('p-pickup').value = place.address; pUpdateFare(); });
   attachAutocomplete($('p-destination'), place => { pDestination = place; $('p-destination').value = place.address; pUpdateFare(); });
+  // Free address suggestions (no API key / no cost) — works even without a
+  // Google Maps key. Lets passengers tap a matching LGA/locality or a real
+  // street address instead of typing an exact match, which both speeds up
+  // booking and avoids "outside service area" false alarms from typos.
+  attachFreeAutocomplete($('p-pickup'), place => { pPickup = place; $('p-pickup').value = place.address; pUpdateFare(); });
+  attachFreeAutocomplete($('p-destination'), place => { pDestination = place; $('p-destination').value = place.address; pUpdateFare(); });
 
   $('p-use-gps').addEventListener('click', async ()=>{
     $('p-use-gps').disabled = true;
@@ -3394,7 +3611,7 @@ function aRenderArea(){
       const keywords = document.getElementById(`a-zone-keywords-${idx}`).value.split(',').map(k=>k.trim().toLowerCase()).filter(Boolean);
       if(!name || isNaN(lat) || isNaN(lng) || isNaN(radiusKm)){ toast('Fill in all zone fields.', 'err'); return; }
       serviceZones[idx] = Object.assign({}, serviceZones[idx], { name, lat, lng, radiusKm, areaKeywords: keywords });
-      await db.collection('settings').doc('serviceZones').set({ zones: serviceZones });
+      await db.collection('settings').doc('serviceZones').set({ zones: serviceZones, zonesVersion: SERVICE_ZONES_VERSION });
       serviceArea.name = 'Lagos & Ogun States';
       serviceArea.areaKeywords = serviceZones.flatMap(z=>z.areaKeywords||[]);
       toast(`${name} zone saved.`, 'ok');
