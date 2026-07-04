@@ -1,5 +1,5 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Zrider — Bike Rides Across Lagos & Ogun States",
   "short_name": "Zrider",
   "description": "Fast, affordable motorcycle rides across every Local Government Area in Lagos State and Ogun State, Nigeria.",
@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#04170D",
-  "theme_color": "#04170D",
+  "background_color": "#0E3B22",
+  "theme_color": "#0E3B22",
   "lang": "en-NG",
   "dir": "ltr",
   "categories": ["travel", "navigation", "lifestyle"],

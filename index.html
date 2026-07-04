@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Zrider — Bike Rides Across Lagos & Ogun States</title>
 <meta name="description" content="Zrider: fast, affordable motorcycle rides across every Local Government Area in Lagos State and Ogun State, Nigeria.">
-<meta name="theme-color" content="#04170D">
+<meta name="theme-color" content="#0E3B22">
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,10 +30,10 @@
 <style>
 :root{
   /* === Zrider Theme (Opay-style green) === */
-  --green-900:#04170D; --green-700:#0A2A17; --green-600:#0F3B20; --green-100:#123A22;
+  --green-900:#0E3B22; --green-700:#14502E; --green-600:#1B6B3D; --green-100:#1F7A45;
   --amber-500:#FFB100; --amber-600:#E69E00; --amber-100:#2a2200;
-  --ink-900:#F2F2F2; --ink-700:#CFE3D6; --ink-400:#8FAE9C; --ink-200:#3F5F4C;
-  --surface-0:#0C2416; --surface-1:#04170D; --surface-2:#123A22;
+  --ink-900:#F2F2F2; --ink-700:#CFE3D6; --ink-400:#A7C9B5; --ink-200:#3F5F4C;
+  --surface-0:#14502E; --surface-1:#0E3B22; --surface-2:#1F7A45;
   --red-600:#E64539; --red-100:#2d1210;
   --radius-s:10px; --radius-m:16px; --radius-l:24px;
   --shadow-card:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.5);
@@ -45,7 +45,7 @@
   --accent-dim:#2a2200;
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;height:100%;background:#04170D;}
+html,body{margin:0;padding:0;height:100%;background:#0E3B22;}
 body{font-family:var(--font-body);font-size:var(--fs-base);line-height:1.5;color:var(--ink-900);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 button{font-family:inherit;} input,select,textarea{font-family:inherit;color:var(--ink-900);background:var(--surface-2);border-color:var(--surface-2);}
 ::selection{background:var(--amber-100);} a{color:inherit;}
@@ -105,13 +105,13 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 
 .map-wrap{position:relative;width:100%;height:260px;background:var(--surface-2);overflow:hidden;}
 .map-wrap .gmap{width:100%;height:100%;}
-.map-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--ink-400);font-size:12px;text-align:center;padding:20px;background:repeating-linear-gradient(135deg, #0F3B20 0 12px, #04170D 12px 24px);}
+.map-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--ink-400);font-size:12px;text-align:center;padding:20px;background:repeating-linear-gradient(135deg, #1B6B3D 0 12px, #0E3B22 12px 24px);}
 
 .sheet{background:var(--surface-0);border-radius:var(--radius-l) var(--radius-l) 0 0;margin-top:-20px;position:relative;z-index:2;box-shadow:0 -6px 40px rgba(0,0,0,.6);padding:18px 16px 16px;flex:1;border-top:1px solid var(--surface-2);}
 .sheet-handle{width:36px;height:4px;background:var(--surface-2);border-radius:2px;margin:0 auto 14px;}
 
-.auth-screen{min-height:100vh;display:flex;flex-direction:column;background:#04170D;color:#fff;}
-.auth-hero{padding:48px 24px 24px;background:linear-gradient(160deg,#0F3B20 0%,#04170D 60%);}
+.auth-screen{min-height:100vh;display:flex;flex-direction:column;background:#0E3B22;color:#fff;}
+.auth-hero{padding:48px 24px 24px;background:linear-gradient(160deg,#1B6B3D 0%,#0E3B22 60%);}
 .auth-hero .brand-row{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
 .auth-hero .brand-mark{background:var(--amber-500);color:#000;}
 .auth-hero h1{color:#fff;font-size:34px;line-height:1.15;}
@@ -472,7 +472,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 <template id="tpl-p-wallet">
   <div class="screen-body">
     <!-- Balance card -->
-    <div style="background:linear-gradient(135deg,#0F3B20 0%,#04170D 100%);border:1px solid var(--amber-500);border-radius:var(--radius-l);padding:22px;margin-bottom:16px;position:relative;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#1B6B3D 0%,#0E3B22 100%);border:1px solid var(--amber-500);border-radius:var(--radius-l);padding:22px;margin-bottom:16px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,177,0,.06);"></div>
       <div style="position:absolute;bottom:-30px;left:-10px;width:80px;height:80px;border-radius:50%;background:rgba(255,177,0,.04);"></div>
       <p class="zr-eyebrow" style="margin-bottom:8px;">WALLET BALANCE</p>
@@ -1262,7 +1262,7 @@ function showInstallBanner(){
   if(document.getElementById('zr-install-banner')) return;
   const banner = document.createElement('div');
   banner.id = 'zr-install-banner';
-  banner.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;z-index:150;background:#0F3B20;border:1px solid var(--amber-500);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);max-width:456px;margin:0 auto;';
+  banner.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;z-index:150;background:#1B6B3D;border:1px solid var(--amber-500);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);max-width:456px;margin:0 auto;';
   banner.innerHTML = `
     <img src="icons/icon-72.png" style="width:36px;height:36px;border-radius:8px;" alt="">
     <div style="flex:1;">
