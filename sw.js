@@ -1,107 +1,97 @@
-// Zrider Service Worker — v1.0.0
-// Provides offline shell, background sync, and push notification support.
+// Zrider service worker
+// Strategy:
+//  - App shell (index.html, manifest, icons) is precached on install and
+//    served cache-first so the app opens instantly and works offline.
+//  - Same-origin navigations use a network-first strategy with a cache
+//    fallback, so users always get the newest build when online, but the
+//    app still opens if they're offline.
+//  - Cross-origin requests (Firebase/Firestore, Google Fonts, Nominatim,
+//    Paystack, Google Maps) are NEVER cached and always go straight to the
+//    network — this is a live ride-hailing app, so real-time data, auth,
+//    and payments must never be served stale or intercepted.
 
-const CACHE_NAME = 'zrider-v1';
-const OFFLINE_URL = './index.html';
-
-// Files to pre-cache for offline access
-const PRECACHE_URLS = [
+const CACHE_VERSION = 'zrider-v1';
+const APP_SHELL = [
+  './',
   './index.html',
   './manifest.json',
+  './icons/icon-72.png',
+  './icons/icon-96.png',
+  './icons/icon-128.png',
+  './icons/icon-144.png',
+  './icons/icon-152.png',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-384.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-192.png',
+  './icons/icon-maskable-512.png'
 ];
 
-// ─── Install ────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_VERSION)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
 });
 
-// ─── Activate ───────────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ─── Fetch (Network-first with offline fallback) ─────────────────────────────
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+  const req = event.request;
+  const url = new URL(req.url);
 
-  // Skip non-GET, cross-origin (Firebase, Google Maps, Paystack, Nominatim)
-  if (request.method !== 'GET') return;
-  if (url.origin !== self.location.origin) return;
-
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Cache fresh copy of same-origin assets
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() =>
-        // Offline: serve from cache or fall back to app shell
-        caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL))
-      )
-  );
-});
-
-// ─── Push Notifications ───────────────────────────────────────────────────────
-self.addEventListener('push', (event) => {
-  let data = { title: 'Zrider', body: 'You have a new notification.' };
-  try {
-    data = event.data ? event.data.json() : data;
-  } catch (e) {}
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: './icons/icon-192.png',
-      badge: './icons/icon-96.png',
-      vibrate: [200, 100, 200],
-      data: data.url || './',
-      actions: [
-        { action: 'open', title: 'Open Zrider' },
-        { action: 'dismiss', title: 'Dismiss' }
-      ]
-    })
-  );
-});
-
-// ─── Notification Click ───────────────────────────────────────────────────────
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  if (event.action === 'dismiss') return;
-  const url = event.notification.data || './index.html';
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      return clients.openWindow(url);
-    })
-  );
-});
-
-// ─── Background Sync (e.g. queued ride requests while offline) ────────────────
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'zrider-sync') {
-    event.waitUntil(Promise.resolve()); // Firebase handles its own sync on reconnect
+  // Only handle GET requests on our own origin — everything else
+  // (Firestore, Firebase Auth, Paystack, Nominatim, Google Fonts/Maps,
+  // POST/PUT requests, etc.) is left completely untouched so the service
+  // worker never interferes with live data, payments, or auth.
+  if (req.method !== 'GET' || url.origin !== self.location.origin) {
+    return;
   }
+
+  // Page navigations: network-first, falling back to the cached app
+  // shell when offline (so the app still opens without a connection).
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put('./index.html', copy));
+          return res;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Static assets (icons, manifest, etc.): cache-first, updating the
+  // cache in the background when a fresh copy is fetched.
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      const networkFetch = fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || networkFetch;
+    })
+  );
+});
+
+// Allow the page to trigger an immediate update (e.g. from an
+// "update available" banner) without waiting for the next navigation.
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
