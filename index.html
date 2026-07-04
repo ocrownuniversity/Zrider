@@ -909,8 +909,25 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="field"><label>Rate per km (₦)</label><input type="number" id="a-price-perkm"></div>
     <div class="field"><label>Rate per minute (₦)</label><input type="number" id="a-price-permin"></div>
     <div class="field"><label>Minimum fare (₦)</label><input type="number" id="a-price-min"></div>
-    <div class="field"><label>Platform commission (%)</label><input type="number" id="a-price-commission"></div>
     <button class="btn btn-primary" id="a-save-pricing">Save pricing rules</button>
+  </div>
+
+  <h2 style="margin-top:24px;">Rider & company split</h2>
+  <p class="muted" style="margin-top:6px;">Control how every trip fare is divided between the rider and Zrider. Change this anytime — it applies to every trip completed after you save.</p>
+  <div class="card" style="margin-top:14px;">
+    <div class="field">
+      <label>Rider gets (%)</label>
+      <input type="number" id="a-split-rider" min="0" max="100" step="1">
+    </div>
+    <div class="field">
+      <label>Company gets (%)</label>
+      <input type="number" id="a-split-company" min="0" max="100" step="1">
+    </div>
+    <div class="card" style="background:var(--green-100);margin-bottom:14px;">
+      <div class="zr-eyebrow">EXAMPLE ON A ₦1,000 TRIP</div>
+      <div id="a-split-preview" style="margin-top:8px;font-weight:600;"></div>
+    </div>
+    <button class="btn btn-primary" id="a-save-split">Save split</button>
   </div>
 </template>
 
@@ -1412,9 +1429,9 @@ function isLikelyInServiceArea(point){
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
 }
-function computeFareBreakdown(distanceKm){
+function computeFareBreakdown(distanceKm, durationMin){
   const r = fareRules;
-  const estMinutes = distanceKm * 3.2;
+  const estMinutes = (durationMin != null) ? durationMin : distanceKm * 3.2;
   const distCharge = distanceKm * r.perKm;
   const timeCharge = estMinutes * r.perMin;
   let total = r.baseFare + distCharge + timeCharge;
@@ -2358,27 +2375,57 @@ function pUpdateFare(){
   if(!destOk){ warnEl.textContent = `Destination must be within ${serviceArea.name}. Zrider doesn't operate outside this zone yet.`; $('p-fare-card').classList.add('hidden'); return; }
 
   if(pPickup.lat != null && pDestination.lat != null){
-    const distKm = haversineKm(pPickup.lat, pPickup.lng, pDestination.lat, pDestination.lng);
-    applyFareBreakdown(distKm);
+    $('p-fare-card').classList.remove('hidden');
+    $('p-fare-amount').textContent = '…';
+    $('p-fare-distance').textContent = 'Calculating…';
+    resolveRoute(pPickup.lat, pPickup.lng, pDestination.lat, pDestination.lng).then(({distKm, durationMin})=>{
+      applyFareBreakdown(distKm, durationMin);
+    });
   } else {
     // Both points lack exact coordinates — geocode using Nominatim (free, no API key)
     $('p-fare-card').classList.remove('hidden');
     $('p-fare-amount').textContent = '…';
     $('p-fare-distance').textContent = 'Calculating…';
-    geocodeAddresses(pPickup.address, pDestination.address).then(({distKm, pLat, pLng, dLat, dLng})=>{
+    geocodeAddresses(pPickup.address, pDestination.address).then(({pLat, pLng, dLat, dLng})=>{
       if(pLat) pPickup.lat = pLat, pPickup.lng = pLng;
       if(dLat) pDestination.lat = dLat, pDestination.lng = dLng;
+      if(pLat && dLat){
+        return resolveRoute(pLat, pLng, dLat, dLng).then(({distKm, durationMin})=> applyFareBreakdown(distKm, durationMin));
+      }
+      // Geocoding itself failed for one or both addresses — last resort:
+      // estimate from known area/locality positions (still better than a flat guess)
+      const distKm = estimateDistFromAddresses(pPickup.address, pDestination.address);
       applyFareBreakdown(distKm);
     }).catch(()=>{
-      // Last resort: estimate from area keyword positions (still better than hardcoded 3.5)
       const distKm = estimateDistFromAddresses(pPickup.address, pDestination.address);
       applyFareBreakdown(distKm);
     });
   }
 }
 
-function applyFareBreakdown(distKm){
-  const breakdown = computeFareBreakdown(distKm);
+// Real road-network distance + travel time via OSRM's free public routing
+// server (no API key, no billing). This is far more accurate than a
+// straight-line guess, since Lagos/Ogun roads are rarely straight and
+// traffic-aware routing gives a realistic ETA. Falls back to a corrected
+// straight-line estimate (roads are typically ~35% longer than "as the
+// crow flies" in this road network) if the routing request fails.
+async function resolveRoute(lat1, lng1, lat2, lng2){
+  try{
+    const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=false`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data && data.code === 'Ok' && data.routes && data.routes[0]){
+      const route = data.routes[0];
+      return { distKm: Math.max(0.3, route.distance / 1000), durationMin: Math.max(2, route.duration / 60) };
+    }
+  }catch(e){ /* fall through to straight-line estimate below */ }
+  const straightKm = haversineKm(lat1, lng1, lat2, lng2);
+  const roadKm = straightKm * 1.35; // road-network correction factor
+  return { distKm: roadKm, durationMin: roadKm * 3.2 };
+}
+
+function applyFareBreakdown(distKm, durationMin){
+  const breakdown = computeFareBreakdown(distKm, durationMin);
   const dc = $('p-fare-distance'); if(dc) dc.textContent = fmtKm(distKm);
   const tc = $('p-fare-time'); if(tc) tc.textContent = '~' + breakdown.estMinutes + ' min';
   const bc = $('p-fare-base'); if(bc) bc.textContent = fmtNaira(breakdown.base);
@@ -3655,18 +3702,50 @@ function aRenderPricing(){
   $('a-price-perkm').value = fareRules.perKm;
   $('a-price-permin').value = fareRules.perMin;
   $('a-price-min').value = fareRules.minFare;
-  $('a-price-commission').value = fareRules.commissionPct;
   $('a-save-pricing').addEventListener('click', async ()=>{
-    const updated = {
+    const updated = Object.assign({}, fareRules, {
       baseFare: parseFloat($('a-price-base').value)||0,
       perKm: parseFloat($('a-price-perkm').value)||0,
       perMin: parseFloat($('a-price-permin').value)||0,
-      minFare: parseFloat($('a-price-min').value)||0,
-      commissionPct: parseFloat($('a-price-commission').value)||0
-    };
+      minFare: parseFloat($('a-price-min').value)||0
+    });
     await db.collection('settings').doc('fareRules').set(updated);
     fareRules = updated;
     toast('Pricing rules saved.', 'ok');
+  });
+
+  // ---- Rider & company split (rider % / company % always sum to 100) ----
+  const riderInput = $('a-split-rider');
+  const companyInput = $('a-split-company');
+  const preview = $('a-split-preview');
+  const companyPct = fareRules.commissionPct != null ? fareRules.commissionPct : 15;
+  riderInput.value = Math.round((100 - companyPct)*10)/10;
+  companyInput.value = Math.round(companyPct*10)/10;
+
+  function updatePreview(){
+    const companyPctNow = parseFloat(companyInput.value) || 0;
+    const riderShare = Math.round(1000 * (100 - companyPctNow) / 100);
+    const companyShare = 1000 - riderShare;
+    preview.textContent = `Rider keeps ₦${riderShare.toLocaleString()} · Company keeps ₦${companyShare.toLocaleString()}`;
+  }
+  riderInput.addEventListener('input', ()=>{
+    let v = Math.min(100, Math.max(0, parseFloat(riderInput.value) || 0));
+    companyInput.value = Math.round((100 - v)*10)/10;
+    updatePreview();
+  });
+  companyInput.addEventListener('input', ()=>{
+    let v = Math.min(100, Math.max(0, parseFloat(companyInput.value) || 0));
+    riderInput.value = Math.round((100 - v)*10)/10;
+    updatePreview();
+  });
+  updatePreview();
+
+  $('a-save-split').addEventListener('click', async ()=>{
+    const companyPctNew = Math.min(100, Math.max(0, parseFloat(companyInput.value) || 0));
+    const updated = Object.assign({}, fareRules, { commissionPct: companyPctNew });
+    await db.collection('settings').doc('fareRules').set(updated);
+    fareRules = updated;
+    toast(`Split saved — riders now keep ${(100-companyPctNew).toFixed(0)}%, company keeps ${companyPctNew.toFixed(0)}% on every trip.`, 'ok');
   });
 }
 
