@@ -375,7 +375,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">Distance charge</span><span class="meter" id="p-fare-distcharge">—</span></div>
     <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">Time charge</span><span class="meter" id="p-fare-timecharge">—</span></div>
     <div class="divider"></div>
-    <div class="row"><span class="muted">Total fare</span><span class="meter" id="p-fare-amount" style="font-size:20px;color:var(--green-700);">—</span></div>
+    <div class="row"><span class="muted">Total fare</span><span class="meter" id="p-fare-amount" style="font-size:20px;color:var(--amber-500);">—</span></div>
     <div class="route-stripe" style="margin:12px 0;"></div>
     <div class="field" style="margin-bottom:8px;"><label>Pay with</label>
       <select id="p-pay-method"><option value="cash">Cash to rider</option><option value="wallet">Wallet balance</option><option value="card">Card / Bank (Paystack)</option></select>
@@ -434,7 +434,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="row" style="font-size:12.5px;"><span class="muted">Distance</span><span id="p-receipt-distance">—</span></div>
     <div class="row" style="margin-top:5px;font-size:12.5px;"><span class="muted">Payment method</span><span id="p-receipt-payment">—</span></div>
     <div class="divider"></div>
-    <div class="row"><span class="muted">Total paid</span><span class="meter" style="font-size:18px;color:var(--green-700);" id="p-receipt-fare">₦0</span></div>
+    <div class="row"><span class="muted">Total paid</span><span class="meter" style="font-size:18px;color:var(--amber-500);" id="p-receipt-fare">₦0</span></div>
   </div>
   <div style="text-align:center;">
     <div class="avatar" style="width:60px;height:60px;font-size:22px;margin:0 auto 10px;" id="p-rate-avatar">R</div>
@@ -2482,9 +2482,13 @@ function estimateDistFromAddresses(addr1, addr2){
 
 async function pRequestRide(){
   if(!pPickup || !pDestination) { toast('Set your pickup and destination first.', 'err'); return; }
-  const btn = $('p-request-ride'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   const distKm = parseFloat($('p-fare-card').dataset.distKm);
   const fare = parseFloat($('p-fare-card').dataset.fare);
+  if(!isFinite(distKm) || !isFinite(fare) || fare <= 0){
+    toast('Still calculating your fare — try again in a moment.', 'err');
+    return;
+  }
+  const btn = $('p-request-ride'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   const paymentMethod = $('p-pay-method').value;
 
   try{
@@ -2529,7 +2533,8 @@ async function pRequestRide(){
     }
     toast('Looking for a nearby rider…', 'ok');
   }catch(e){
-    toast('Could not request a ride. Try again.', 'err');
+    console.error('Ride request failed:', e);
+    toast(`Could not request a ride: ${e.message || e.code || 'unknown error'}`, 'err');
     btn.disabled = false; btn.textContent = 'Request bike';
   }
 }
@@ -3590,8 +3595,8 @@ async function aLoadRidersList(){
         <p class="muted" style="margin-top:4px;">${u.email}</p>
         <p style="margin-top:8px;font-size:13px;">${r.bikeModel||'—'} · ${r.plate||'—'}</p>
         <p class="muted" style="margin-top:4px;">License: ${r.licenseNo||'—'}</p>
-        ${r.licenseDocURL ? `<a href="${r.licenseDocURL}" target="_blank" style="font-size:12px;color:var(--green-700);">View license document</a><br>` : ''}
-        ${r.bikeDocURL ? `<a href="${r.bikeDocURL}" target="_blank" style="font-size:12px;color:var(--green-700);">View bike document</a>` : ''}
+        ${r.licenseDocURL ? `<a href="${r.licenseDocURL}" target="_blank" style="font-size:12px;color:var(--amber-500);">View license document</a><br>` : ''}
+        ${r.bikeDocURL ? `<a href="${r.bikeDocURL}" target="_blank" style="font-size:12px;color:var(--amber-500);">View bike document</a>` : ''}
         <div class="btn-block-row" style="margin-top:12px;" data-actions></div>`;
       const actions = el.querySelector('[data-actions]');
       if(r.status === 'pending'){
