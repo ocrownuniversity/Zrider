@@ -3475,7 +3475,16 @@ function rListenIncomingRequests(){
     .onSnapshot(snap=>{
       _rLastRideDocs = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
       rProcessIncomingSnapshot();
-    }, err => console.warn('incoming requests listener error', err));
+    }, err => {
+      // Previously this only logged to console, so a Firestore permission
+      // error (e.g. security rules blocking reads of unassigned rides where
+      // riderId is null) failed completely silently — the rider would just
+      // never see any requests with no visible sign anything was wrong.
+      console.warn('incoming requests listener error', err);
+      if(err && err.code === 'permission-denied'){
+        toast('Cannot load ride requests — check Firestore security rules for the rides collection.', 'err');
+      }
+    });
   activeListeners.push(unsub);
 }
 
