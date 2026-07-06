@@ -112,6 +112,8 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 .bottomnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;padding:8px 2px;color:var(--ink-400);font-size:12px;font-weight:600;cursor:pointer;border-radius:10px;}
 .bottomnav button.active{color:var(--amber-500);}
 .bottomnav button svg{width:21px;height:21px;}
+.bottomnav button{position:relative;}
+.nav-badge{position:absolute;top:2px;right:calc(50% - 20px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red-600);color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center;box-shadow:0 0 0 2px var(--surface-0);}
 
 .screen{flex:1;display:flex;flex-direction:column;min-height:0;}
 .screen-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:24px;}
@@ -646,11 +648,13 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
       </div>
     </div>
     <div id="r-screen-home" class="screen-tab"></div>
+    <div id="r-screen-requests" class="screen-tab hidden"></div>
     <div id="r-screen-earnings" class="screen-tab hidden"></div>
     <div id="r-screen-history" class="screen-tab hidden"></div>
     <div id="r-screen-profile" class="screen-tab hidden"></div>
     <div class="bottomnav" id="r-bottomnav">
       <button data-tab="home" class="active">🏠<span>Home</span></button>
+      <button data-tab="requests">📋<span>Requests</span><span class="nav-badge hidden" id="r-requests-badge">0</span></button>
       <button data-tab="earnings">💰<span>Earnings</span></button>
       <button data-tab="history">🧾<span>Trips</span></button>
       <button data-tab="profile">👤<span>Profile</span></button>
@@ -680,6 +684,24 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     </div>
     <p class="muted" style="font-size:13px;margin-bottom:10px;">Every open request nearby — tap Accept on any of them, not just the one on top.</p>
     <div id="r-pending-list"></div>
+  </div>
+</template>
+
+<!-- Rider: dedicated Requests tab (same data as the Home pending list,
+     but always reachable from the bottom nav even while scrolled/mid-flow) -->
+<template id="tpl-r-requests">
+  <div class="screen-body">
+    <h3 style="margin-bottom:4px;">Pending ride requests</h3>
+    <p class="muted" style="font-size:13px;margin-bottom:14px;">Every open request nearby — tap Accept on any of them, not just the newest one.</p>
+    <div id="r-requests-offline-msg" class="empty-state hidden">
+      <p>You're offline.</p>
+      <p class="muted" style="font-size:13px;margin-top:4px;">Go online from the Home tab to start seeing ride requests here.</p>
+    </div>
+    <div id="r-requests-empty" class="empty-state hidden">
+      <p>No pending requests right now.</p>
+      <p class="muted" style="font-size:13px;margin-top:4px;">New requests will ring and show up here automatically.</p>
+    </div>
+    <div id="r-requests-list"></div>
   </div>
 </template>
 
@@ -3320,7 +3342,7 @@ function renderRiderApp(){
     if(!btn) return;
     rSwitchTab(btn.dataset.tab);
   });
-  $('r-open-notifs').addEventListener('click', ()=> rSwitchTab('home'));
+  $('r-open-notifs').addEventListener('click', ()=> rSwitchTab('requests'));
 
   rRenderHomeTab();
   rListenActiveRide();
@@ -3328,10 +3350,15 @@ function renderRiderApp(){
 
 function rSwitchTab(tab){
   rCurrentTab = tab;
-  ['home','earnings','history','profile'].forEach(t=>{
+  ['home','requests','earnings','history','profile'].forEach(t=>{
     $('r-screen-'+t).classList.toggle('hidden', t!==tab);
   });
   $('r-bottomnav').querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+  if(tab==='requests'){
+    const c = $('r-screen-requests');
+    if(!c.dataset.built){ c.appendChild(clone('tpl-r-requests')); c.dataset.built = '1'; }
+    rProcessIncomingSnapshot();
+  }
   if(tab==='earnings') rRenderEarningsTab();
   if(tab==='history') rRenderHistoryTab();
   if(tab==='profile') rRenderProfileTab();
@@ -3458,13 +3485,17 @@ function rListenIncomingRequests(){
 // instead of only ever seeing them one-by-one in sequence.
 function rRenderPendingList(candidates){
   const wrap = $('r-pending-list-wrap');
-  if(!wrap) return;
-  if(!riderDoc.online || candidates.length === 0){ wrap.classList.add('hidden'); return; }
-  wrap.classList.remove('hidden');
-  const countEl = $('r-pending-count'); if(countEl) countEl.textContent = candidates.length;
-  const list = $('r-pending-list');
-  if(!list) return;
-  list.innerHTML = candidates.map(r => `
+  const count = candidates.length;
+
+  // Badge on the "Requests" bottom-nav tab — visible from any tab, so the
+  // rider can see there's a pending request even while on Earnings/Trips.
+  const badge = $('r-requests-badge');
+  if(badge){
+    if(riderDoc.online && count > 0){ badge.textContent = count > 9 ? '9+' : String(count); badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  }
+
+  const cardHtml = r => `
     <div class="card" style="margin-bottom:10px;">
       <div class="row">
         <strong style="font-size:14.5px;">${escapeHtml(r.passengerName || 'Passenger')}</strong>
@@ -3478,13 +3509,48 @@ function rRenderPendingList(candidates){
         <button class="btn btn-primary r-pending-accept" style="padding:9px;font-size:13px;" data-ride-id="${r.id}">Accept</button>
       </div>
     </div>
-  `).join('');
-  list.querySelectorAll('.r-pending-decline').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ rDeclinedIds.add(btn.dataset.rideId); rRenderSheetIdle(); });
-  });
-  list.querySelectorAll('.r-pending-accept').forEach(btn=>{
-    btn.addEventListener('click', ()=> rAcceptRide(btn.dataset.rideId, btn));
-  });
+  `;
+  const wireButtons = listEl=>{
+    listEl.querySelectorAll('.r-pending-decline').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ rDeclinedIds.add(btn.dataset.rideId); rRenderSheetIdle(); rProcessIncomingSnapshot(); });
+    });
+    listEl.querySelectorAll('.r-pending-accept').forEach(btn=>{
+      btn.addEventListener('click', ()=> rAcceptRide(btn.dataset.rideId, btn));
+    });
+  };
+
+  // Home tab's pending panel (only shown while online and non-empty).
+  if(wrap){
+    if(!riderDoc.online || count === 0){ wrap.classList.add('hidden'); }
+    else {
+      wrap.classList.remove('hidden');
+      const countEl = $('r-pending-count'); if(countEl) countEl.textContent = count;
+      const list = $('r-pending-list');
+      if(list){ list.innerHTML = candidates.map(cardHtml).join(''); wireButtons(list); }
+    }
+  }
+
+  // Dedicated Requests tab — always reflects the current state (including
+  // offline/empty messaging) whether or not the rider is currently on it.
+  const reqList = $('r-requests-list');
+  const reqEmpty = $('r-requests-empty');
+  const reqOffline = $('r-requests-offline-msg');
+  if(reqList){
+    if(!riderDoc.online){
+      reqOffline?.classList.remove('hidden');
+      reqEmpty?.classList.add('hidden');
+      reqList.innerHTML = '';
+    } else if(count === 0){
+      reqOffline?.classList.add('hidden');
+      reqEmpty?.classList.remove('hidden');
+      reqList.innerHTML = '';
+    } else {
+      reqOffline?.classList.add('hidden');
+      reqEmpty?.classList.add('hidden');
+      reqList.innerHTML = candidates.map(cardHtml).join('');
+      wireButtons(reqList);
+    }
+  }
 }
 
 // Shared accept logic used by both the single "top priority" incoming
