@@ -1644,6 +1644,27 @@ const LOCALITY_POSITIONS = {
   'ijebu ode':{lat:6.8206,lng:3.9186}
 };
 
+// Fallback position for a zone keyword that has no curated entry above —
+// used for any area name an admin adds themselves in the Service Areas
+// screen. Without this, every custom keyword added to the same zone
+// resolved to that zone's exact center point, so two different custom
+// areas in one zone (e.g. two names added to the same zone) looked like
+// the identical coordinate. That collapsed pickup/destination onto one
+// point, which made the free routing service reject the (zero-length)
+// route and silently fall back to the "road route unavailable" straight-
+// line estimate seen when picking two such areas. Spreading each keyword
+// to its own deterministic point within the zone (same keyword always
+// lands on the same spot) keeps areas distinguishable and routable.
+function keywordFallbackPosition(kLower, z){
+  let hash = 0;
+  for(let i=0;i<kLower.length;i++){ hash = ((hash<<5) - hash + kLower.charCodeAt(i)) | 0; }
+  const angle = (Math.abs(hash) % 360) * (Math.PI/180);
+  const spreadKm = (z.radiusKm || 5) * 0.55; // stay well within the zone
+  const dLat = (spreadKm/111) * Math.cos(angle);
+  const dLng = (spreadKm/(111 * Math.cos(z.lat * Math.PI/180))) * Math.sin(angle);
+  return { lat: z.lat + dLat, lng: z.lng + dLng };
+}
+
 function attachAutocomplete(inputEl, onPlace){
   loadGoogleMaps().then(ok=>{
     if(!ok || !window.google || !inputEl) return;
@@ -1721,7 +1742,7 @@ function attachFreeAutocomplete(inputEl, onSelect){
         const kLower = k.toLowerCase();
         if(kLower.startsWith(q) && !seen.has(kLower)){
           seen.add(kLower);
-          const pos = LOCALITY_POSITIONS[kLower] || { lat:z.lat, lng:z.lng };
+          const pos = LOCALITY_POSITIONS[kLower] || keywordFallbackPosition(kLower, z);
           out.push({ label: k.replace(/\b\w/g, c=>c.toUpperCase()) + ', ' + z.name, lat:pos.lat, lng:pos.lng, tag:'LGA' });
         }
         if(out.length >= 5) break;
@@ -2672,7 +2693,7 @@ function bestKnownPositionForAddress(address){
     }
   }
   if(!best) return null;
-  return LOCALITY_POSITIONS[best.kLower] || { lat:best.z.lat, lng:best.z.lng };
+  return LOCALITY_POSITIONS[best.kLower] || keywordFallbackPosition(best.kLower, best.z);
 }
 function estimateDistFromAddresses(addr1, addr2){
   const p = bestKnownPositionForAddress(addr1), d = bestKnownPositionForAddress(addr2);
@@ -3259,10 +3280,22 @@ const CANCEL_REASONS_RIDER = ['Passenger unreachable','Passenger not at pickup',
 let rCurrentTab = 'home';
 let rDeclinedIds = new Set();
 
+// Reused across every alert instead of creating a brand-new AudioContext
+// each time a request comes in. Mobile browsers cap how many AudioContexts
+// can exist at once, and the old code created one per ring and never closed
+// it — after a handful of bookings that limit was silently exhausted, so
+// the ringtone worked for the first request or two and then quietly did
+// nothing for every booking after that (the try/catch swallowed the
+// failure). Keeping one shared context and resuming it if it was ever
+// auto-suspended fixes ringing for every incoming booking, not just the
+// first ones.
+let _rAlertCtx = null;
 function alertNewRequest(){
   try{
     if(navigator.vibrate) navigator.vibrate([200,80,200]);
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if(!_rAlertCtx) _rAlertCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _rAlertCtx;
+    if(ctx.state === 'suspended') ctx.resume();
     [880, 1175].forEach((freq, i)=>{
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
