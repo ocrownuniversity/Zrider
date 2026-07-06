@@ -1470,6 +1470,38 @@ const SERVICE_BOUNDS = { minLat:6.4, maxLat:7.6, minLng:2.5, maxLng:4.3 };
 // Same box expressed as a Nominatim viewbox string: left,top,right,bottom (lng,lat)
 const SERVICE_VIEWBOX = `${SERVICE_BOUNDS.minLng},${SERVICE_BOUNDS.maxLat},${SERVICE_BOUNDS.maxLng},${SERVICE_BOUNDS.minLat}`;
 
+// Riders don't need to see the bureaucratic "LGA" tag in the address text —
+// it's only meaningful internally for zone lookups and admin screens. This
+// strips the word "LGA" (and the spelled-out "Local Government Area", in
+// case a remote Nominatim result ever includes it) purely for display, e.g.
+// "Abeokuta North LGA (Ogun)" -> "Abeokuta North (Ogun)". The underlying
+// zone.name (used for matching, admin screens, etc.) is left completely
+// untouched — this only affects what gets rendered in the address text.
+function stripLGA(text){
+  return (text || '')
+    .replace(/\bLocal Government Area\b/gi, '')
+    .replace(/\bLGA\b/gi, '')
+    .replace(/\s*,\s*,/g, ',')      // collapse any double commas left behind
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim();
+}
+// Nominatim's display_name is the full address hierarchy: e.g.
+// "Osiele, Obafemi Owode, Ogun State, Nigeria" or, for a house-number-level
+// match, "5, Adigbe Street, Osiele, Obafemi Owode, Ogun State, Nigeria".
+// Riders just want the specific place they typed — no LGA, no state, no
+// country — but if they typed a street (or a house number on a street),
+// that should still show. So: keep the first segment, and also keep the
+// second segment when the first is just a bare house number.
+function shortenPlaceLabel(displayName){
+  const parts = (displayName || '').split(',').map(p=>p.trim()).filter(Boolean);
+  if(!parts.length) return stripLGA(displayName);
+  let short = /^\d+[a-zA-Z]?$/.test(parts[0]) && parts.length > 1
+    ? parts[0] + ', ' + parts[1]
+    : parts[0];
+  return stripLGA(short);
+}
+
 // ---------- UNIFIED ADDRESS SEARCH (free Nominatim, cached, prioritized) ----------
 // Single source of truth for turning what someone types into real
 // candidate locations. Used by both the live-typing autocomplete dropdown
@@ -1493,7 +1525,7 @@ async function searchAddress(query){
     let results = (Array.isArray(data) ? data : []).map(d=>{
       const lat = parseFloat(d.lat), lng = parseFloat(d.lon);
       return {
-        label: d.display_name,
+        label: shortenPlaceLabel(d.display_name),
         lat, lng,
         // Prioritize results actually inside our Ogun State coverage —
         // Nominatim's viewbox is only a soft hint, so we re-rank
@@ -1769,7 +1801,7 @@ function attachFreeAutocomplete(inputEl, onSelect){
         if(kLower.startsWith(q) && !seen.has(kLower)){
           seen.add(kLower);
           const pos = LOCALITY_POSITIONS[kLower] || keywordFallbackPosition(kLower, z);
-          out.push({ label: k.replace(/\b\w/g, c=>c.toUpperCase()) + ', ' + z.name, lat:pos.lat, lng:pos.lng, tag:'LGA' });
+          out.push({ label: k.replace(/\b\w/g, c=>c.toUpperCase()), lat:pos.lat, lng:pos.lng, tag:'LGA' });
         }
         if(out.length >= 5) break;
       }
@@ -1784,7 +1816,7 @@ function attachFreeAutocomplete(inputEl, onSelect){
   // (and the top-5 cap) stays consistent everywhere.
   async function remoteMatches(query, localLabels){
     const results = await searchAddress(query);
-    const mapped = results.map(r => ({ label:r.label, lat:r.lat, lng:r.lng, tag: r.inCoverage ? 'MAP' : 'FAR' }));
+    const mapped = results.map(r => ({ label:stripLGA(r.label), lat:r.lat, lng:r.lng, tag: r.inCoverage ? 'MAP' : 'FAR' }));
     // Drop remote results that are really the same place as a local match
     // we already have a precise, curated point for — a generic Nominatim
     // LGA-boundary centroid can sit several km away from our curated
