@@ -48,6 +48,12 @@
   --ink-900:#F2F2F2; --ink-700:#CFE3D6; --ink-400:#A7C9B5; --ink-200:#3F5F4C;
   --surface-0:#14502E; --surface-1:#0E3B22; --surface-2:#1F7A45;
   --red-600:#E64539; --red-100:#2d1210;
+  /* Dedicated input/field colors — deliberately NOT the same as the dark
+     green card surfaces, so every text field, textarea, and select stands
+     out clearly against any card, modal, or sheet in the app instead of
+     blending into the background. */
+  --field-bg:#F4F8F5; --field-text:#0E241A; --field-border:#B9CCC0;
+  --field-border-focus:var(--amber-500); --field-placeholder:#5C7268;
   --radius-s:10px; --radius-m:16px; --radius-l:24px;
   --shadow-card:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.5);
   --shadow-pop:0 12px 40px rgba(0,0,0,.7);
@@ -60,7 +66,7 @@
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;height:100%;background:#0E3B22;}
 body{font-family:var(--font-body);font-size:var(--fs-base);line-height:1.5;color:var(--ink-900);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-button{font-family:inherit;} input,select,textarea{font-family:inherit;color:var(--ink-900);background:var(--surface-2);border-color:var(--surface-2);}
+button{font-family:inherit;} input,select,textarea{font-family:inherit;color:var(--field-text);background:var(--field-bg);border-color:var(--field-border);}
 ::selection{background:var(--amber-100);} a{color:inherit;}
 .hidden{display:none !important;} .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;}
 
@@ -89,9 +95,9 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:var(--fs-label);font-weight:600;color:var(--ink-700);margin-bottom:6px;letter-spacing:.01em;}
-.field input, .field select, .field textarea{width:100%;padding:14px;border-radius:var(--radius-s);border:1.5px solid var(--surface-2);background:var(--surface-2);font-size:16px;color:var(--ink-900);outline:none;transition:border-color .15s;}
-.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--amber-500);}
-.field input::placeholder{color:var(--ink-400);}
+.field input, .field select, .field textarea{width:100%;padding:14px;border-radius:var(--radius-s);border:1.5px solid var(--field-border);background:var(--field-bg);font-size:16px;color:var(--field-text);outline:none;transition:border-color .15s, box-shadow .15s;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--field-border-focus);box-shadow:0 0 0 3px rgba(255,177,0,.18);}
+.field input::placeholder, .field textarea::placeholder{color:var(--field-placeholder);}
 .field .hint{font-size:13px;color:var(--ink-400);margin-top:4px;}
 
 .card{background:var(--surface-0);border-radius:var(--radius-m);padding:16px;box-shadow:var(--shadow-card);border:1px solid var(--surface-2);}
@@ -182,7 +188,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 .bottomnav button.active::after{content:'';display:block;width:18px;height:2px;background:var(--amber-500);border-radius:1px;margin-top:1px;box-shadow:0 0 6px var(--amber-500);}
 
 /* Input search boxes in admin */
-#a-rider-search, #a-passenger-search{background:var(--surface-2);border:1.5px solid var(--surface-2);color:var(--ink-900);}
+#a-rider-search, #a-passenger-search{background:var(--field-bg);border:1.5px solid var(--field-border);color:var(--field-text);}
 #a-rider-search:focus, #a-passenger-search:focus{border-color:var(--amber-500);outline:none;}
 #a-rider-search::placeholder, #a-passenger-search::placeholder{color:var(--ink-400);}
 
@@ -463,7 +469,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
       <svg data-v="4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01z"/></svg>
       <svg data-v="5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01z"/></svg>
     </div>
-    <textarea id="p-rate-comment" placeholder="Leave a comment (optional)" rows="2" style="width:100%;border:1.5px solid var(--surface-2);border-radius:10px;padding:10px;margin-bottom:14px;"></textarea>
+    <textarea id="p-rate-comment" placeholder="Leave a comment (optional)" rows="2" style="width:100%;border:1.5px solid var(--field-border);border-radius:10px;padding:10px;margin-bottom:14px;"></textarea>
     <button class="btn btn-primary" id="p-submit-rating">Submit rating</button>
   </div>
 </template>
@@ -918,7 +924,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 
 <template id="tpl-a-riders">
   <h2>Riders</h2>
-  <input type="text" id="a-rider-search" placeholder="Search by name or email…" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--surface-2);font-size:14px;margin-top:10px;">
+  <input type="text" id="a-rider-search" placeholder="Search by name or email…" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--field-border);font-size:14px;margin-top:10px;">
   <div class="tabs-row" id="a-rider-filter" style="margin-top:12px;">
     <button data-f="pending" class="active">Pending</button>
     <button data-f="approved">Approved</button>
@@ -930,7 +936,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 
 <template id="tpl-a-passengers">
   <h2>Passengers</h2>
-  <input type="text" id="a-passenger-search" placeholder="Search by name or email…" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--surface-2);font-size:14px;margin-top:10px;">
+  <input type="text" id="a-passenger-search" placeholder="Search by name or email…" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--field-border);font-size:14px;margin-top:10px;">
   <div id="a-passengers-list" style="margin-top:14px;"></div>
 </template>
 
@@ -1013,7 +1019,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="modal-head"><h3 id="chat-title">Chat</h3><button class="modal-close" data-close>✕</button></div>
     <div id="chat-messages" class="scroll" style="max-height:50vh;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
     <div class="row gap">
-      <input type="text" id="chat-input" placeholder="Type a message…" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--surface-2);">
+      <input type="text" id="chat-input" placeholder="Type a message…" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--field-border);">
       <button class="btn btn-primary btn-sm" id="chat-send">Send</button>
     </div>
   </div>
@@ -4219,7 +4225,7 @@ function aRenderArea(){
       <div class="field"><label>Center longitude</label><input type="number" step="0.0001" id="a-zone-lng-${idx}" value="${zone.lng}"></div>
       <div class="field"><label>Radius (km)</label><input type="number" step="0.1" id="a-zone-radius-${idx}" value="${zone.radiusKm}"></div>
       <div class="field"><label>Recognized area names (comma separated)</label>
-        <textarea id="a-zone-keywords-${idx}" rows="3" style="width:100%;border:1.5px solid var(--surface-2);border-radius:10px;padding:10px;font-size:13px;">${(zone.areaKeywords||[]).join(', ')}</textarea>
+        <textarea id="a-zone-keywords-${idx}" rows="3" style="width:100%;border:1.5px solid var(--field-border);border-radius:10px;padding:10px;font-size:13px;">${(zone.areaKeywords||[]).join(', ')}</textarea>
       </div>
       <button class="btn btn-primary btn-sm" id="a-save-zone-${idx}">Save zone</button>`;
     zoneList.appendChild(card);
