@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  // Captured as the very first thing on the page, before anything else
+  // loads. Chrome can fire 'beforeinstallprompt' the instant it decides a
+  // page is installable — sometimes before the rest of our app's script
+  // (loaded near the end of the page) even runs. Attaching this listener
+  // here, first, means we never miss that event no matter how fast it
+  // fires. The main app script below picks this up in setupPWA().
+  window.__zrDeferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    window.__zrDeferredInstallPrompt = e;
+  });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Zrider — Bike Rides Across Ogun State</title>
@@ -660,6 +673,14 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     </div>
   </div>
   <div class="sheet scroll" id="r-sheet"><!-- JS: offline toggle / incoming request / active trip --></div>
+  <div class="hidden" id="r-pending-list-wrap" style="padding:14px 16px 24px;">
+    <div class="row" style="margin-bottom:10px;">
+      <h3 style="font-size:16px;">Pending ride requests</h3>
+      <span class="pill pill-amber" id="r-pending-count">0</span>
+    </div>
+    <p class="muted" style="font-size:13px;margin-bottom:10px;">Every open request nearby — tap Accept on any of them, not just the one on top.</p>
+    <div id="r-pending-list"></div>
+  </div>
 </template>
 
 <!-- Rider offline/online toggle (idle, no ride) -->
@@ -1149,10 +1170,20 @@ function setupPWA(){
 
   if(IS_STANDALONE){ return; } // already installed — never show install UI
 
-  // Capture the install prompt for the banner + buttons
+  // Pick up an install prompt that may have already fired before this
+  // script even ran (captured by the tiny inline script at the very top
+  // of <head>) — this is the fix for the prompt being missed on fast
+  // page loads.
+  if(window.__zrDeferredInstallPrompt){
+    deferredInstallPrompt = window.__zrDeferredInstallPrompt;
+  }
+
+  // Also keep listening directly, in case it fires later (e.g. Chrome
+  // takes a moment to finish its installability checks on a first visit).
   window.addEventListener('beforeinstallprompt', (e)=>{
     e.preventDefault();
     deferredInstallPrompt = e;
+    window.__zrDeferredInstallPrompt = e;
     showInstallBanner();
     showInstallButtons();
   });
@@ -1481,6 +1512,9 @@ function isLikelyInServiceArea(point){
 }
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
+}
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function computeFareBreakdown(distanceKm, durationMin){
   const r = fareRules;
@@ -3224,7 +3258,6 @@ const CANCEL_REASONS_RIDER = ['Passenger unreachable','Passenger not at pickup',
 // ============================== RIDER APP ==============================
 let rCurrentTab = 'home';
 let rDeclinedIds = new Set();
-let lastAlertedRideId = null;
 
 function alertNewRequest(){
   try{
@@ -3280,6 +3313,14 @@ function rRenderHomeTab(){
   renderMapInto('map-rider','map-rider-fallback', null);
   getCurrentPosition().then(pos => renderMapInto('map-rider','map-rider-fallback', pos)).catch(()=>{});
   rRenderSheetIdle();
+  // Subscribed exactly once per rider-app mount — previously this was
+  // called from rRenderSheetIdle() itself, which ran every single time
+  // the sheet returned to idle (after declining a ride, after finishing a
+  // trip, etc.), silently stacking up a new duplicate Firestore listener
+  // each time with no limit. Over a session that meant more and more
+  // redundant listeners all racing to redraw the same UI, which could
+  // eventually make new requests appear to stop showing up reliably.
+  rListenIncomingRequests();
 }
 
 function rRenderSheetIdle(){
@@ -3312,7 +3353,6 @@ function rRenderSheetIdle(){
     $('r-toggle-knob').style.background = toggle.checked ? '#000' : '#fff';
     $('r-status-label').textContent = toggle.checked ? "You're online" : "You're offline";
   }
-  rListenIncomingRequests();
 }
 
 async function setRiderOnline(online){
@@ -3328,25 +3368,100 @@ async function setRiderOnline(online){
   } else {
     if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
     toast('You are now offline.');
+    $('r-pending-list-wrap')?.classList.add('hidden');
   }
 }
+
+// Ride IDs we've already sounded the alert for this session, so a rider
+// who's mid-decline-flow (or just has the list open) still gets a fresh
+// ding for a genuinely new second/third request, not just when the single
+// top-priority card happens to change.
+let rAlertedRideIds = new Set();
 
 function rListenIncomingRequests(){
   const unsub = db.collection('rides').where('status','==','searching').where('riderId','==',null)
     .onSnapshot(snap=>{
-      if(!riderDoc.online || activeRideId) return; // ignore while offline or mid-trip
+      if(!riderDoc.online || activeRideId){
+        const wrap = $('r-pending-list-wrap'); if(wrap) wrap.classList.add('hidden');
+        return; // ignore while offline or mid-trip
+      }
       const candidates = snap.docs
         .map(d=>Object.assign({id:d.id}, d.data()))
         .filter(r=> !rDeclinedIds.has(r.id) && isLikelyInServiceArea(r.pickup));
       candidates.sort((a,b)=> (a.createdAt?.toMillis?.()||0) - (b.createdAt?.toMillis?.()||0));
+
+      // Alert for every request we haven't already alerted for — covers
+      // multiple simultaneous pending rides, not just the newest one.
+      let hasNewArrival = false;
+      candidates.forEach(c=>{ if(!rAlertedRideIds.has(c.id)){ rAlertedRideIds.add(c.id); hasNewArrival = true; } });
+      if(hasNewArrival) alertNewRequest();
+
+      rRenderPendingList(candidates);
+
       if(candidates.length === 0){ if(rCurrentTab==='home' && !activeRideId) rRenderSheetIdle(); return; }
       if(rCurrentTab==='home' && !activeRideId) rRenderSheetIncoming(candidates[0]);
     }, err => console.warn('incoming requests listener error', err));
   activeListeners.push(unsub);
 }
 
+// Persistent list of every open ride request, visible any time the rider
+// is online — separate from the single "top priority" card in the sheet,
+// so a rider can see and act on more than one waiting request at a time
+// instead of only ever seeing them one-by-one in sequence.
+function rRenderPendingList(candidates){
+  const wrap = $('r-pending-list-wrap');
+  if(!wrap) return;
+  if(!riderDoc.online || candidates.length === 0){ wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  const countEl = $('r-pending-count'); if(countEl) countEl.textContent = candidates.length;
+  const list = $('r-pending-list');
+  if(!list) return;
+  list.innerHTML = candidates.map(r => `
+    <div class="card" style="margin-bottom:10px;">
+      <div class="row">
+        <strong style="font-size:14.5px;">${escapeHtml(r.passengerName || 'Passenger')}</strong>
+        <span class="meter" style="font-size:15px;">${fmtNaira(r.fare)}</span>
+      </div>
+      <div class="row" style="margin-top:6px;"><span class="muted" style="font-size:12.5px;">Pickup</span><span style="font-size:12.5px;text-align:right;max-width:65%;">${escapeHtml(r.pickup.address)}</span></div>
+      <div class="row" style="margin-top:4px;"><span class="muted" style="font-size:12.5px;">Destination</span><span style="font-size:12.5px;text-align:right;max-width:65%;">${escapeHtml(r.destination.address)}</span></div>
+      <div class="row" style="margin-top:4px;"><span class="muted" style="font-size:12.5px;">Distance</span><span class="meter" style="font-size:13px;">${fmtKm(r.distanceKm)}</span></div>
+      <div class="btn-block-row" style="margin-top:10px;">
+        <button class="btn btn-outline r-pending-decline" style="color:var(--red-600);border-color:var(--red-600);padding:9px;font-size:13px;" data-ride-id="${r.id}">Decline</button>
+        <button class="btn btn-primary r-pending-accept" style="padding:9px;font-size:13px;" data-ride-id="${r.id}">Accept</button>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.r-pending-decline').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ rDeclinedIds.add(btn.dataset.rideId); rRenderSheetIdle(); });
+  });
+  list.querySelectorAll('.r-pending-accept').forEach(btn=>{
+    btn.addEventListener('click', ()=> rAcceptRide(btn.dataset.rideId, btn));
+  });
+}
+
+// Shared accept logic used by both the single "top priority" incoming
+// card and the full pending-requests list, so accepting works the same
+// way (and with the same race-condition safety) from either place.
+async function rAcceptRide(rideId, btnEl){
+  if(btnEl){ btnEl.disabled = true; btnEl.innerHTML = '<span class="spinner"></span>'; }
+  try{
+    await db.runTransaction(async (tx)=>{
+      const ref = db.collection('rides').doc(rideId);
+      const fresh = await tx.get(ref);
+      if(!fresh.exists || fresh.data().riderId){ throw new Error('TAKEN'); }
+      tx.update(ref, {
+        riderId: currentUser.uid, riderName: currentUserDoc.name, riderPhone: currentUserDoc.phone || '',
+        status: 'accepted', riderActive: true
+      });
+    });
+    toast('Ride accepted! Head to pickup.', 'ok');
+  }catch(e){
+    toast('Sorry, that ride was already taken.', 'err');
+    rDeclinedIds.add(rideId); rRenderSheetIdle();
+  }
+}
+
 function rRenderSheetIncoming(ride){
-  if(lastAlertedRideId !== ride.id){ lastAlertedRideId = ride.id; alertNewRequest(); }
   const sheet = $('r-sheet');
   sheet.innerHTML = '';
   sheet.appendChild(clone('tpl-r-incoming'));
@@ -3362,24 +3477,7 @@ function rRenderSheetIncoming(ride){
   });
 
   $('r-decline-ride').addEventListener('click', ()=>{ rDeclinedIds.add(ride.id); rRenderSheetIdle(); });
-  $('r-accept-ride').addEventListener('click', async ()=>{
-    $('r-accept-ride').disabled = true; $('r-accept-ride').innerHTML = '<span class="spinner"></span>';
-    try{
-      await db.runTransaction(async (tx)=>{
-        const ref = db.collection('rides').doc(ride.id);
-        const fresh = await tx.get(ref);
-        if(!fresh.exists || fresh.data().riderId){ throw new Error('TAKEN'); }
-        tx.update(ref, {
-          riderId: currentUser.uid, riderName: currentUserDoc.name, riderPhone: currentUserDoc.phone || '',
-          status: 'accepted', riderActive: true
-        });
-      });
-      toast('Ride accepted! Head to pickup.', 'ok');
-    }catch(e){
-      toast('Sorry, that ride was already taken.', 'err');
-      rDeclinedIds.add(ride.id); rRenderSheetIdle();
-    }
-  });
+  $('r-accept-ride').addEventListener('click', ()=> rAcceptRide(ride.id, $('r-accept-ride')));
 }
 
 function rListenActiveRide(){
