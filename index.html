@@ -1532,6 +1532,10 @@ function isLikelyInServiceArea(point){
   const text = (point.address || '').toLowerCase();
   return getAllZoneKeywords().some(k => text.includes(k));
 }
+function todayKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function computeFare(distanceKm){
   return computeFareBreakdown(distanceKm).total;
 }
@@ -1925,6 +1929,13 @@ async function routeUser(user){
     if(!riderDoc){
       await db.collection('riders').doc(user.uid).set({ status:'incomplete', online:false, walletBalance:0, totalEarned:0, totalTrips:0, createdAt: FieldValue.serverTimestamp() });
       riderDoc = { status:'incomplete', online:false, walletBalance:0, totalEarned:0, totalTrips:0 };
+    }
+    // "Today's earnings/trips" were only ever incremented, never reset, so
+    // they silently became a running lifetime total instead of resetting
+    // each day. If the stored date isn't today, zero them out here.
+    if(riderDoc.todayDate !== todayKey()){
+      riderDoc.todayEarnings = 0; riderDoc.todayTrips = 0; riderDoc.todayDate = todayKey();
+      db.collection('riders').doc(user.uid).update({ todayEarnings:0, todayTrips:0, todayDate: todayKey() }).catch(()=>{});
     }
     if(riderDoc.status === 'incomplete') renderRiderGate('onboard');
     else if(riderDoc.status === 'pending') renderRiderGate('pending');
@@ -3200,7 +3211,7 @@ function openChat(rideId, otherName){
           const m = d.data();
           const mine = m.senderId === currentUser.uid;
           const b = document.createElement('div');
-          b.style.cssText = `max-width:75%;padding:8px 12px;border-radius:14px;font-size:13.5px;align-self:${mine?'flex-end':'flex-start'};background:${mine?'var(--green-700)':'var(--surface-2)'};color:${mine?'#fff':'var(--ink-900)'};`;
+          b.style.cssText = `max-width:75%;padding:8px 12px;border-radius:14px;font-size:13.5px;align-self:${mine?'flex-end':'flex-start'};background:${mine?'var(--amber-500)':'var(--surface-2)'};color:${mine?'var(--green-900)':'var(--ink-900)'};font-weight:${mine?'600':'400'};`;
           b.textContent = m.text;
           msgBox.appendChild(b);
         });
@@ -3685,6 +3696,13 @@ async function riderCompleteTrip(ride){
   const earning = ride.fare - commission; // rider's net take-home either way
   const isCash = ride.paymentMethod === 'cash';
 
+  // If the app has stayed open across midnight, roll "today" over before
+  // adding this trip's earnings, so they don't get folded into yesterday's total.
+  if(riderDoc.todayDate !== todayKey()){
+    riderDoc.todayEarnings = 0; riderDoc.todayTrips = 0; riderDoc.todayDate = todayKey();
+    await db.collection('riders').doc(currentUser.uid).update({ todayEarnings:0, todayTrips:0, todayDate: todayKey() });
+  }
+
   await db.collection('rides').doc(ride.id).update({
     status:'completed', completedAt: FieldValue.serverTimestamp(), riderActive:false,
     riderEarning: earning, riderCashCommission: isCash ? commission : 0
@@ -3706,6 +3724,8 @@ async function riderCompleteTrip(ride){
     });
     await chargeCashCommission(currentUser.uid, commission, `Commission on cash trip — ${fmtNaira(ride.fare)} collected in cash`, { rideId: ride.id, method:'cash_commission' });
     riderDoc.walletBalance = (riderDoc.walletBalance||0) - commission;
+    riderDoc.todayEarnings = (riderDoc.todayEarnings||0) + earning;
+    riderDoc.todayTrips = (riderDoc.todayTrips||0) + 1;
     toast(`Trip completed! You collected ${fmtNaira(ride.fare)} cash. ₦${commission.toLocaleString()} commission deducted from your wallet.`, 'ok');
   } else {
     // Wallet / card trips: the platform already holds the money, so the
@@ -3719,6 +3739,8 @@ async function riderCompleteTrip(ride){
     });
     await creditWallet(currentUser.uid, earning, `Trip earnings — ${fmtNaira(ride.fare)} fare`, { rideId: ride.id, method:'trip_earning' });
     riderDoc.walletBalance = (riderDoc.walletBalance||0) + earning;
+    riderDoc.todayEarnings = (riderDoc.todayEarnings||0) + earning;
+    riderDoc.todayTrips = (riderDoc.todayTrips||0) + 1;
     toast(`Trip completed! You earned ${fmtNaira(earning)}`, 'ok');
   }
 
