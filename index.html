@@ -3398,6 +3398,7 @@ async function setRiderOnline(online){
       }, ()=>{}, { enableHighAccuracy:true });
     }
     toast('You are online — looking for ride requests.', 'ok');
+    rProcessIncomingSnapshot();
   } else {
     if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
     toast('You are now offline.');
@@ -3411,28 +3412,42 @@ async function setRiderOnline(online){
 // top-priority card happens to change.
 let rAlertedRideIds = new Set();
 
+// Latest raw docs from the open-requests query, kept even while we're
+// offline/mid-trip and skipping the render below. Firestore's onSnapshot
+// only fires again when the query results actually change server-side —
+// it does NOT re-fire just because riderDoc.online flipped locally. Without
+// caching this, a request placed while a rider was offline (or mid-trip)
+// would sit there unseen even after the rider went online, because no new
+// write happened to re-trigger the listener. rProcessIncomingSnapshot()
+// lets us re-run the same logic on demand, e.g. right after going online.
+let _rLastRideDocs = [];
+
+function rProcessIncomingSnapshot(){
+  if(!riderDoc.online || activeRideId){
+    const wrap = $('r-pending-list-wrap'); if(wrap) wrap.classList.add('hidden');
+    return; // ignore while offline or mid-trip
+  }
+  const candidates = _rLastRideDocs
+    .filter(r=> !rDeclinedIds.has(r.id) && isLikelyInServiceArea(r.pickup));
+  candidates.sort((a,b)=> (a.createdAt?.toMillis?.()||0) - (b.createdAt?.toMillis?.()||0));
+
+  // Alert for every request we haven't already alerted for — covers
+  // multiple simultaneous pending rides, not just the newest one.
+  let hasNewArrival = false;
+  candidates.forEach(c=>{ if(!rAlertedRideIds.has(c.id)){ rAlertedRideIds.add(c.id); hasNewArrival = true; } });
+  if(hasNewArrival) alertNewRequest();
+
+  rRenderPendingList(candidates);
+
+  if(candidates.length === 0){ if(rCurrentTab==='home' && !activeRideId) rRenderSheetIdle(); return; }
+  if(rCurrentTab==='home' && !activeRideId) rRenderSheetIncoming(candidates[0]);
+}
+
 function rListenIncomingRequests(){
   const unsub = db.collection('rides').where('status','==','searching').where('riderId','==',null)
     .onSnapshot(snap=>{
-      if(!riderDoc.online || activeRideId){
-        const wrap = $('r-pending-list-wrap'); if(wrap) wrap.classList.add('hidden');
-        return; // ignore while offline or mid-trip
-      }
-      const candidates = snap.docs
-        .map(d=>Object.assign({id:d.id}, d.data()))
-        .filter(r=> !rDeclinedIds.has(r.id) && isLikelyInServiceArea(r.pickup));
-      candidates.sort((a,b)=> (a.createdAt?.toMillis?.()||0) - (b.createdAt?.toMillis?.()||0));
-
-      // Alert for every request we haven't already alerted for — covers
-      // multiple simultaneous pending rides, not just the newest one.
-      let hasNewArrival = false;
-      candidates.forEach(c=>{ if(!rAlertedRideIds.has(c.id)){ rAlertedRideIds.add(c.id); hasNewArrival = true; } });
-      if(hasNewArrival) alertNewRequest();
-
-      rRenderPendingList(candidates);
-
-      if(candidates.length === 0){ if(rCurrentTab==='home' && !activeRideId) rRenderSheetIdle(); return; }
-      if(rCurrentTab==='home' && !activeRideId) rRenderSheetIncoming(candidates[0]);
+      _rLastRideDocs = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+      rProcessIncomingSnapshot();
     }, err => console.warn('incoming requests listener error', err));
   activeListeners.push(unsub);
 }
@@ -3518,7 +3533,7 @@ function rListenActiveRide(){
     .where('riderId','==', currentUser.uid)
     .where('riderActive','==', true)
     .onSnapshot(snap=>{
-      if(snap.empty){ activeRideId = null; if(rCurrentTab==='home') rRenderSheetIdle(); return; }
+      if(snap.empty){ activeRideId = null; if(rCurrentTab==='home') rRenderSheetIdle(); rProcessIncomingSnapshot(); return; }
       const doc = snap.docs[0];
       activeRideId = doc.id;
       const ride = Object.assign({id:doc.id}, doc.data());
