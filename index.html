@@ -349,10 +349,10 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div id="p-screen-wallet" class="screen-tab hidden"></div>
     <div id="p-screen-profile" class="screen-tab hidden"></div>
     <div class="bottomnav" id="p-bottomnav">
-      <button data-tab="home" class="active">🏠<span>Home</span></button>
-      <button data-tab="history">🧾<span>Trips</span></button>
-      <button data-tab="wallet">💰<span>Wallet</span></button>
-      <button data-tab="profile">👤<span>Profile</span></button>
+      <button data-tab="home" class="active">🏠<span data-i18n="nav.home">Home</span></button>
+      <button data-tab="history">🧾<span data-i18n="nav.trips">Trips</span></button>
+      <button data-tab="wallet">💰<span data-i18n="nav.wallet">Wallet</span></button>
+      <button data-tab="profile">👤<span data-i18n="nav.profile">Profile</span></button>
     </div>
   </div>
 </template>
@@ -379,13 +379,13 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
 <!-- Passenger ride request form (inside sheet) -->
 <template id="tpl-p-request-form">
   <div class="sheet-handle"></div>
-  <div class="zr-eyebrow">PLAN YOUR TRIP</div>
-  <div class="field" style="margin-top:10px;"><label>Pickup</label><input type="text" id="p-pickup" placeholder="Use my location or search…"></div>
-  <div class="field"><label>Destination</label><input type="text" id="p-destination" placeholder="Where to? (Anywhere in Ogun State)"></div>
+  <div class="zr-eyebrow" data-i18n="plan.eyebrow">PLAN YOUR TRIP</div>
+  <div class="field" style="margin-top:10px;"><label data-i18n="plan.pickup">Pickup</label><input type="text" id="p-pickup" data-i18n-ph="plan.pickupPh" placeholder="Use my location or search…"></div>
+  <div class="field"><label data-i18n="plan.destination">Destination</label><input type="text" id="p-destination" data-i18n-ph="plan.destPh" placeholder="Where to? (Anywhere in Ogun State)"></div>
   <div class="row gap" style="margin-bottom:10px;flex-wrap:wrap;">
-    <button class="btn btn-outline btn-sm" id="p-use-gps">📍 Use current location</button>
-    <button class="btn btn-outline btn-sm hidden" id="p-quick-home">🏠 Home</button>
-    <button class="btn btn-outline btn-sm hidden" id="p-quick-work">💼 Work</button>
+    <button class="btn btn-outline btn-sm" id="p-use-gps" data-i18n="plan.gps">📍 Use current location</button>
+    <button class="btn btn-outline btn-sm hidden" id="p-quick-home" data-i18n="plan.home">🏠 Home</button>
+    <button class="btn btn-outline btn-sm hidden" id="p-quick-work" data-i18n="plan.work">💼 Work</button>
   </div>
   <div id="p-recent-destinations" style="margin-bottom:14px;"></div>
   <div class="card hidden" id="p-fare-card">
@@ -399,11 +399,11 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div class="divider"></div>
     <div class="row"><span class="muted">Total fare</span><span class="meter" id="p-fare-amount" style="font-size:20px;color:var(--amber-500);">—</span></div>
     <div class="route-stripe" style="margin:12px 0;"></div>
-    <div class="field" style="margin-bottom:8px;"><label>Pay with</label>
-      <select id="p-pay-method"><option value="cash">Cash to rider</option><option value="wallet">Wallet balance</option><option value="card">Card / Bank (Paystack)</option></select>
+    <div class="field" style="margin-bottom:8px;"><label data-i18n="plan.payWith">Pay with</label>
+      <select id="p-pay-method"><option value="cash" data-i18n="plan.cash">Cash to rider</option><option value="wallet" data-i18n="plan.walletOpt">Wallet balance</option><option value="card" data-i18n="plan.card">Card / Bank (Paystack)</option></select>
       <p id="p-wallet-hint" class="muted" style="font-size:11px;margin-top:4px;"></p>
     </div>
-    <button class="btn btn-amber" id="p-request-ride">Request bike</button>
+    <button class="btn btn-amber" id="p-request-ride" data-i18n="plan.requestBtn">Request bike</button>
   </div>
   <p class="muted" id="p-geofence-warning" style="color:var(--red-600);margin-top:10px;"></p>
 </template>
@@ -638,6 +638,16 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
       <div class="field"><label>💼 Work address</label><input type="text" id="p-edit-work" placeholder="Search address…"></div>
       <button class="btn btn-outline" id="p-save-places">Save places</button>
     </div>
+    <div class="card">
+      <div class="zr-eyebrow" data-i18n="profile.language">LANGUAGE</div>
+      <div class="field" style="margin-top:8px;">
+        <select id="p-lang-select">
+          <option value="en">English</option>
+          <option value="pcm">Pidgin</option>
+          <option value="yo">Yorùbá</option>
+        </select>
+      </div>
+    </div>
     <button class="btn btn-outline" id="p-logout" style="margin-top:12px;">Log out</button>
   </div>
 </template>
@@ -659,11 +669,11 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     <div id="r-screen-history" class="screen-tab hidden"></div>
     <div id="r-screen-profile" class="screen-tab hidden"></div>
     <div class="bottomnav" id="r-bottomnav">
-      <button data-tab="home" class="active">🏠<span>Home</span></button>
-      <button data-tab="requests">📋<span>Requests</span><span class="nav-badge hidden" id="r-requests-badge">0</span></button>
-      <button data-tab="earnings">💰<span>Earnings</span></button>
-      <button data-tab="history">🧾<span>Trips</span></button>
-      <button data-tab="profile">👤<span>Profile</span></button>
+      <button data-tab="home" class="active">🏠<span data-i18n="nav.home">Home</span></button>
+      <button data-tab="requests">📋<span data-i18n="nav.requests">Requests</span><span class="nav-badge hidden" id="r-requests-badge">0</span></button>
+      <button data-tab="earnings">💰<span data-i18n="nav.earnings">Earnings</span></button>
+      <button data-tab="history">🧾<span data-i18n="nav.trips">Trips</span></button>
+      <button data-tab="profile">👤<span data-i18n="nav.profile">Profile</span></button>
     </div>
   </div>
 </template>
@@ -873,6 +883,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
     </div>
     <div class="tabs-row" id="a-tabs" style="padding:12px 16px 0;">
       <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="analytics">Analytics</button>
       <button data-tab="riders">Riders</button>
       <button data-tab="passengers">Passengers</button>
       <button data-tab="trips">Trips</button>
@@ -885,6 +896,7 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
       <button data-tab="broadcast">Notify</button>
     </div>
     <div id="a-screen-overview" class="screen-tab screen-body"></div>
+    <div id="a-screen-analytics" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-riders" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-passengers" class="screen-tab screen-body hidden"></div>
     <div id="a-screen-trips" class="screen-tab screen-body hidden"></div>
@@ -920,6 +932,35 @@ p{margin:0;line-height:1.55;font-size:var(--fs-body);} .muted{color:var(--ink-40
   </div>
   <h3 style="margin-top:18px;">Live trips</h3>
   <div id="a-live-trips" style="margin-top:10px;"></div>
+</template>
+
+<template id="tpl-a-analytics">
+  <h2>Analytics</h2>
+  <div class="tabs-row" id="a-analytics-range" style="margin-top:12px;">
+    <button data-range="7">7 days</button>
+    <button data-range="14" class="active">14 days</button>
+    <button data-range="30">30 days</button>
+  </div>
+  <div class="row gap" style="gap:10px;margin-top:14px;">
+    <div class="stat-box" style="flex:1;"><p style="color:rgba(255,255,255,.7);font-size:11px;">RIDES TODAY</p><span class="meter" id="a-an-today-rides">0</span></div>
+    <div class="stat-box" style="flex:1;background:var(--green-700);"><p style="color:rgba(255,255,255,.7);font-size:11px;">REVENUE TODAY</p><span class="meter" id="a-an-today-revenue">₦0</span></div>
+  </div>
+  <div class="row gap" style="gap:10px;margin-top:10px;">
+    <div class="stat-box" style="flex:1;"><p style="color:rgba(255,255,255,.7);font-size:11px;">AVG FARE</p><span class="meter" id="a-an-avg-fare">₦0</span></div>
+    <div class="stat-box" style="flex:1;background:var(--green-700);"><p style="color:rgba(255,255,255,.7);font-size:11px;">CANCELLATION RATE</p><span class="meter" id="a-an-cancel-rate">0%</span></div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="zr-eyebrow" id="a-an-rides-label">RIDES PER DAY</div>
+    <div id="a-chart-rides" style="margin-top:14px;"></div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="zr-eyebrow" id="a-an-revenue-label">REVENUE PER DAY</div>
+    <div id="a-chart-revenue" style="margin-top:14px;"></div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="zr-eyebrow">TRIP STATUS BREAKDOWN (SELECTED RANGE)</div>
+    <div id="a-status-breakdown" style="margin-top:12px;"></div>
+  </div>
 </template>
 
 <template id="tpl-a-riders">
@@ -1596,6 +1637,60 @@ function getGreeting(){
   if(h < 12) return 'Good morning';
   if(h < 17) return 'Good afternoon';
   return 'Good evening';
+}
+
+// ---------- LANGUAGE / i18n ----------
+// Lightweight translation layer covering the main nav labels and the trip
+// request form (the screens every rider/passenger sees most). Extend
+// I18N with more keys as needed — anything not translated just falls back
+// to its English text, so it's safe to add coverage incrementally.
+const I18N = {
+  en: {
+    'nav.home':'Home', 'nav.trips':'Trips', 'nav.wallet':'Wallet', 'nav.profile':'Profile',
+    'nav.requests':'Requests', 'nav.earnings':'Earnings',
+    'plan.eyebrow':'PLAN YOUR TRIP', 'plan.pickup':'Pickup', 'plan.destination':'Destination',
+    'plan.pickupPh':'Use my location or search…', 'plan.destPh':'Where to? (Anywhere in Ogun State)',
+    'plan.gps':'📍 Use current location', 'plan.home':'🏠 Home', 'plan.work':'💼 Work',
+    'plan.payWith':'Pay with', 'plan.requestBtn':'Request bike',
+    'plan.cash':'Cash to rider', 'plan.walletOpt':'Wallet balance', 'plan.card':'Card / Bank (Paystack)',
+    'profile.language':'Language'
+  },
+  pcm: { // Nigerian Pidgin
+    'nav.home':'Home', 'nav.trips':'Trips', 'nav.wallet':'Wallet', 'nav.profile':'Profile',
+    'nav.requests':'Requests', 'nav.earnings':'Earnings',
+    'plan.eyebrow':'PLAN YOUR TRIP', 'plan.pickup':'Where you dey', 'plan.destination':'Where you dey go',
+    'plan.pickupPh':'Use my location or search…', 'plan.destPh':'Where you dey go? (Anywhere for Ogun State)',
+    'plan.gps':'📍 Use my current location', 'plan.home':'🏠 House', 'plan.work':'💼 Work',
+    'plan.payWith':'Pay with', 'plan.requestBtn':'Book bike',
+    'plan.cash':'Cash give rider', 'plan.walletOpt':'Wallet balance', 'plan.card':'Card / Bank (Paystack)',
+    'profile.language':'Language'
+  },
+  yo: { // Yorùbá
+    'nav.home':'Ilé', 'nav.trips':'Ìrìn àjò', 'nav.wallet':'Wálẹ́ẹ̀tì', 'nav.profile':'Profaìlì',
+    'nav.requests':'Ìbéèrè', 'nav.earnings':'Owó orí',
+    'plan.eyebrow':'ṢÈTÒ ÌRÌN ÀJÒ RẸ', 'plan.pickup':'Ibi ìgbéwọlé', 'plan.destination':'Ibi tó ń lọ',
+    'plan.pickupPh':'Lo ipò mi tàbí wá àdírẹ́sì…', 'plan.destPh':'Ibo lo ń lọ? (Nibikíbi ní Ipinlẹ̀ Ogun)',
+    'plan.gps':'📍 Lo ipò mi lọ́wọ́lọ́wọ́', 'plan.home':'🏠 Ilé', 'plan.work':'💼 Ibi iṣẹ́',
+    'plan.payWith':'San owó pẹ̀lú', 'plan.requestBtn':'Bèèrè fún alùpùpù',
+    'plan.cash':'Owó lọ́wọ́ fún awakọ̀', 'plan.walletOpt':'Owó nínú wálẹ́ẹ̀tì', 'plan.card':'Káàdì / Báǹkì (Paystack)',
+    'profile.language':'Èdè'
+  }
+};
+let currentLang = localStorage.getItem('zr_lang') || 'en';
+function t(key){
+  return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+}
+function setLang(lang){
+  currentLang = I18N[lang] ? lang : 'en';
+  localStorage.setItem('zr_lang', currentLang);
+  applyTranslations();
+}
+// Walks any [data-i18n] / [data-i18n-ph] elements currently in the DOM and
+// fills in the translated text/placeholder for the active language. Safe
+// to call repeatedly — e.g. after every screen re-render.
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
 }
 function getCurrentPosition(){
   return new Promise((resolve,reject)=>{
@@ -2347,6 +2442,7 @@ function renderPassengerApp(){
 
   pRenderHomeTab();
   pListenActiveRide();
+  applyTranslations();
 }
 
 function pSwitchTab(tab){
@@ -2358,6 +2454,7 @@ function pSwitchTab(tab){
   if(tab==='history') pRenderHistoryTab();
   if(tab==='wallet') pRenderWalletTab();
   if(tab==='profile') pRenderProfileTab();
+  applyTranslations();
 }
 
 function openNotifsModal(){
@@ -2426,11 +2523,12 @@ function pRenderSheet(state, ride){
   if(pSearchTimerInterval){ clearInterval(pSearchTimerInterval); pSearchTimerInterval = null; }
   if(pFareTickerInterval){ clearInterval(pFareTickerInterval); pFareTickerInterval = null; }
   sheet.innerHTML = '';
-  if(state === 'form') return pSheetForm(sheet);
-  if(state === 'searching') return pSheetSearching(sheet, ride);
-  if(state === 'active') return pSheetActive(sheet, ride);
-  if(state === 'rate') return pSheetRate(sheet, ride);
-  if(state === 'cancelled') return pSheetCancelled(sheet, ride);
+  if(state === 'form') pSheetForm(sheet);
+  else if(state === 'searching') pSheetSearching(sheet, ride);
+  else if(state === 'active') pSheetActive(sheet, ride);
+  else if(state === 'rate') pSheetRate(sheet, ride);
+  else if(state === 'cancelled') pSheetCancelled(sheet, ride);
+  applyTranslations();
 }
 
 function pSheetForm(sheet){
@@ -3145,6 +3243,8 @@ function pRenderProfileTab(){
   const c = $('p-screen-profile');
   c.innerHTML = '';
   c.appendChild(clone('tpl-p-profile'));
+  $('p-lang-select').value = currentLang;
+  $('p-lang-select').addEventListener('change', (e)=>{ setLang(e.target.value); });
   $('p-profile-name').textContent = currentUserDoc.name;
   $('p-profile-email').textContent = currentUserDoc.email;
   $('p-profile-rating').textContent = '★ ' + (currentUserDoc.rating||5).toFixed(1);
@@ -3395,6 +3495,7 @@ function renderRiderApp(){
 
   rRenderHomeTab();
   rListenActiveRide();
+  applyTranslations();
 }
 
 function rSwitchTab(tab){
@@ -3411,6 +3512,7 @@ function rSwitchTab(tab){
   if(tab==='earnings') rRenderEarningsTab();
   if(tab==='history') rRenderHistoryTab();
   if(tab==='profile') rRenderProfileTab();
+  applyTranslations();
 }
 
 function rRenderHomeTab(){
@@ -3920,12 +4022,12 @@ function renderAdminApp(){
 
 function aSwitchTab(tab){
   aCurrentTab = tab;
-  ['overview','riders','passengers','trips','pricing','area','wallet','referrals','withdrawals','complaints','broadcast'].forEach(t=>{
+  ['overview','analytics','riders','passengers','trips','pricing','area','wallet','referrals','withdrawals','complaints','broadcast'].forEach(t=>{
     const el = $('a-screen-'+t); if(el) el.classList.toggle('hidden', t!==tab);
   });
   $('a-tabs').querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   const renderers = {
-    overview: aRenderOverview, riders: aRenderRiders, passengers: aRenderPassengers,
+    overview: aRenderOverview, analytics: aRenderAnalytics, riders: aRenderRiders, passengers: aRenderPassengers,
     trips: aRenderTrips, pricing: aRenderPricing, area: aRenderArea,
     wallet: aRenderWallet, referrals: aRenderReferrals,
     withdrawals: aRenderWithdrawals, complaints: aRenderComplaints, broadcast: aRenderBroadcast
@@ -3970,16 +4072,16 @@ async function aRenderOverview(){
   }catch(e){ toast('Could not load overview data.', 'err'); }
 }
 
-// ---- Shared: simple 7-day inline bar chart (no chart library needed) ----
-function renderSevenDayChart(boxId, rides, valueFn, fmtFn){
+// ---- Shared: simple inline bar chart over the last N days (no chart library needed) ----
+function renderDayChart(boxId, rides, numDays, valueFn, fmtFn){
   const box = $(boxId);
-  if(!box) return;
+  if(!box) return [];
   const days = [];
-  for(let i=6; i>=0; i--){
+  for(let i=numDays-1; i>=0; i--){
     const d = new Date();
     d.setDate(d.getDate() - i);
     d.setHours(0,0,0,0);
-    days.push({ date:d, label: d.toLocaleDateString('en-NG',{weekday:'short'}), value:0 });
+    days.push({ date:d, label: d.toLocaleDateString('en-NG', numDays > 7 ? {day:'numeric',month:'short'} : {weekday:'short'}), value:0 });
   }
   rides.forEach(r=>{
     const t = r.completedAt?.toDate?.() || r.createdAt?.toDate?.();
@@ -3990,14 +4092,80 @@ function renderSevenDayChart(boxId, rides, valueFn, fmtFn){
   });
   const max = Math.max(1, ...days.map(d=>d.value));
   const fmt = fmtFn || (v => v.toString());
-  box.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;height:120px;">
+  const showLabel = numDays <= 14; // beyond that, per-bar value labels get too cramped
+  box.innerHTML = `<div style="display:flex;align-items:flex-end;gap:${numDays > 14 ? 3 : 8}px;height:120px;overflow-x:auto;">
     ${days.map(d => `
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
-        <span class="meter" style="font-size:10px;margin-bottom:4px;">${fmt(d.value)}</span>
-        <div style="width:100%;border-radius:6px 6px 2px 2px;background:var(--green-700);height:${Math.max(4, (d.value/max)*84)}px;"></div>
-        <span class="muted" style="font-size:10px;margin-top:6px;">${d.label}</span>
+      <div style="flex:1;min-width:${numDays > 14 ? '10px' : '0'};display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        ${showLabel ? `<span class="meter" style="font-size:10px;margin-bottom:4px;">${fmt(d.value)}</span>` : ''}
+        <div style="width:100%;border-radius:6px 6px 2px 2px;background:var(--green-700);height:${Math.max(4, (d.value/max)*84)}px;" title="${d.label}: ${fmt(d.value)}"></div>
+        <span class="muted" style="font-size:9px;margin-top:6px;white-space:nowrap;">${d.label}</span>
       </div>`).join('')}
   </div>`;
+  return days;
+}
+function renderSevenDayChart(boxId, rides, valueFn, fmtFn){
+  return renderDayChart(boxId, rides, 7, valueFn, fmtFn);
+}
+
+// ---- Analytics ----
+let aAnalyticsRange = 14;
+async function aRenderAnalytics(){
+  const c = $('a-screen-analytics'); c.innerHTML = '';
+  c.appendChild(clone('tpl-a-analytics'));
+  $('a-analytics-range').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('active', parseInt(b.dataset.range) === aAnalyticsRange);
+  });
+  $('a-analytics-range').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-range]'); if(!btn) return;
+    aAnalyticsRange = parseInt(btn.dataset.range);
+    aRenderAnalytics();
+  });
+  try{
+    const ridesSnap = await db.collection('rides').get();
+    const rides = ridesSnap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    const completed = rides.filter(r=>r.status==='completed');
+    const cancelled = rides.filter(r=>r.status==='cancelled');
+
+    // Today
+    const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+    const todaysCompleted = completed.filter(r=>{
+      const t = r.completedAt?.toDate?.() || r.createdAt?.toDate?.();
+      return t && t >= startOfToday;
+    });
+    $('a-an-today-rides').textContent = todaysCompleted.length;
+    $('a-an-today-revenue').textContent = fmtNaira(todaysCompleted.reduce((s,r)=>s+(r.fare||0),0));
+
+    // Range window (for avg fare / cancellation rate / charts)
+    const rangeStart = new Date(); rangeStart.setDate(rangeStart.getDate() - (aAnalyticsRange - 1)); rangeStart.setHours(0,0,0,0);
+    const inRange = (r) => { const t = r.completedAt?.toDate?.() || r.createdAt?.toDate?.(); return t && t >= rangeStart; };
+    const completedInRange = completed.filter(inRange);
+    const cancelledInRange = cancelled.filter(inRange);
+    const allInRange = rides.filter(inRange);
+
+    $('a-an-avg-fare').textContent = completedInRange.length
+      ? fmtNaira(Math.round(completedInRange.reduce((s,r)=>s+(r.fare||0),0) / completedInRange.length))
+      : '₦0';
+    const totalDecided = completedInRange.length + cancelledInRange.length;
+    $('a-an-cancel-rate').textContent = totalDecided ? Math.round((cancelledInRange.length/totalDecided)*100) + '%' : '0%';
+
+    $('a-an-rides-label').textContent = `RIDES PER DAY · LAST ${aAnalyticsRange} DAYS`;
+    $('a-an-revenue-label').textContent = `REVENUE PER DAY · LAST ${aAnalyticsRange} DAYS`;
+    renderDayChart('a-chart-rides', completedInRange, aAnalyticsRange, ()=>1);
+    renderDayChart('a-chart-revenue', completedInRange, aAnalyticsRange, r=>r.fare||0, v=>'₦'+Math.round(v/1000)+'k');
+
+    // Status breakdown for the selected range
+    const statuses = ['completed','cancelled','ongoing','accepted','searching'];
+    const counts = statuses.map(s => allInRange.filter(r=>r.status===s).length);
+    const maxCount = Math.max(1, ...counts);
+    const colors = { completed:'var(--green-700)', cancelled:'var(--red-600)', ongoing:'var(--amber-500)', accepted:'var(--amber-500)', searching:'var(--ink-400)' };
+    $('a-status-breakdown').innerHTML = statuses.map((s,i)=>`
+      <div style="margin-bottom:10px;">
+        <div class="row" style="font-size:12px;margin-bottom:4px;"><span class="muted" style="text-transform:capitalize;">${s}</span><span>${counts[i]}</span></div>
+        <div style="background:var(--surface-2);border-radius:6px;height:8px;overflow:hidden;">
+          <div style="width:${(counts[i]/maxCount)*100}%;height:100%;background:${colors[s]};"></div>
+        </div>
+      </div>`).join('');
+  }catch(e){ toast('Could not load analytics data.', 'err'); }
 }
 
 // ---- Riders ----
