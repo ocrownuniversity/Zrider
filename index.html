@@ -4220,7 +4220,9 @@ function openReceiptModal(r){
       try{
         if(typeof html2canvas !== 'function') throw new Error('html2canvas not loaded');
         const target = document.getElementById('receipt-print-area');
-        const canvas = await html2canvas(target, { backgroundColor:'#ffffff', scale:2 });
+        const canvasPromise = html2canvas(target, { backgroundColor:'#ffffff', scale:2, useCORS:true, allowTaint:true, logging:false });
+        const timeoutPromise = new Promise((_, reject)=> setTimeout(()=> reject(new Error('Image generation timed out')), 7000));
+        const canvas = await Promise.race([canvasPromise, timeoutPromise]);
         const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
         if(!blob) throw new Error('Could not generate image');
         const file = new File([blob], `zrider-receipt-${r.id.slice(0,8)}.png`, { type:'image/png' });
